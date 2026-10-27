@@ -20,18 +20,24 @@ def python(*args):
 
 
 def fixtures(method):
-	result = compose(
-		"exec",
-		"-T",
-		"web",
-		"bench",
-		"--site",
-		LOCK["site"],
-		"execute",
-		"tag_marketing.tests.support.site." + method,
-		capture_output=True,
-		text=True,
-	)
+	try:
+		result = compose(
+			"exec",
+			"-T",
+			"web",
+			"bench",
+			"--site",
+			LOCK["site"],
+			"execute",
+			"tag_marketing.tests.support.site." + method,
+			capture_output=True,
+			text=True,
+		)
+	except subprocess.CalledProcessError as exc:
+		# Report only the exception type; tracebacks can contain fixture secrets.
+		classes = re.findall(r"(?m)^([A-Za-z_][\w.]*(?:Error|Exception)):", exc.stderr + "\n" + exc.stdout)
+		reason = " -> ".join(dict.fromkeys(classes)) if classes else "CLIError"
+		raise RuntimeError("Fixture %s failed (%s, exit %s)" % (method, reason, exc.returncode)) from None
 	return json.loads(result.stdout) if method == "prepare_browser" else None
 
 
@@ -135,6 +141,8 @@ if __name__ == "__main__":
 			except BlockingIOError:
 				raise SystemExit("Another quality run is active; retry after it finishes") from None
 			main()
+	except RuntimeError as exc:
+		raise SystemExit(str(exc)) from None
 	except subprocess.CalledProcessError as exc:
 		# Captured fixture output may contain temporary credentials: never echo it.
 		raise SystemExit("Quality command failed (exit %s)" % exc.returncode) from None

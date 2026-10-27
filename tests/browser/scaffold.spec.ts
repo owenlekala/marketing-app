@@ -8,7 +8,11 @@ for (const kind of ["agent", "manager"] as const) {
     await page.locator("#login_password").fill(account.password);
     await page.locator("#login_password").press("Enter");
     await expect(page).toHaveURL(/\/(app|desk)(\/|$)/, { timeout: 30_000 });
-    await page.waitForFunction(() => Boolean((window as any).frappe?.boot));
+    // Server-injected boot data exists before Desk bundles/startup have finished.
+    await page.waitForFunction(() => Boolean(
+      (window as any).frappe?.app?.sidebar &&
+      typeof (window as any).frappe?.ui?.set_theme === "function"
+    ));
     const theme = info.project.use.colorScheme === "dark" ? "dark" : "light";
     await page.evaluate(theme => {
       document.documentElement.setAttribute("data-theme-mode", theme);
