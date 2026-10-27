@@ -52,7 +52,7 @@
 
 ## WA-P0-004
 
-- [ ] **Configure test harness and deterministic adapters**
+- [x] **Configure test harness and deterministic adapters**
 
 **Depends on:** `WA-P0-003`
 

@@ -39,7 +39,7 @@ export const test = base.extend<{ accounts: Accounts }>({
   request: async ({ request }, use) => {
     const blocked: string[] = [];
     await use(restrictRequest(request, blocked));
-    expect(blocked, "Unexpected outbound request from the browser API fixture").toEqual([]);
+    expect(blocked, "WA_EGRESS_GUARD: unexpected API fixture destination").toEqual([]);
   },
   context: async ({ context }, use) => {
     const blocked: string[] = [];
@@ -70,7 +70,7 @@ export const test = base.extend<{ accounts: Accounts }>({
       }
     });
     await use(context);
-    expect(blocked, "Unexpected outbound request from the browser").toEqual([]);
+    expect(blocked, "WA_EGRESS_GUARD: unexpected browser destination").toEqual([]);
   }
 });
 

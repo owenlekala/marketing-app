@@ -7,19 +7,23 @@ import json
 import re
 import subprocess
 import sys
+import uuid
 
 from runtime import LOCK, PLAYWRIGHT_VERSION, ROOT, compose
 
 PYTHON = "/home/frappe/dev/frappe-bench/env/bin/python"
 APP = "/source/tag_marketing"
 PRIVATE = ROOT / ".local"
+MANIFEST = PRIVATE / "browser-run.json"
+sys.path.insert(0, str(ROOT.parents[1]))
+from tag_marketing.tests.support.reports import verify_egress_report
 
 
 def python(*args):
 	compose("exec", "-T", "-w", APP, "web", PYTHON, *args)
 
 
-def fixtures(method):
+def fixtures(method, run_id):
 	try:
 		result = compose(
 			"exec",
@@ -30,6 +34,8 @@ def fixtures(method):
 			LOCK["site"],
 			"execute",
 			"tag_marketing.tests.support.site." + method,
+			"--kwargs",
+			json.dumps({"run_id": run_id}),
 			capture_output=True,
 			text=True,
 		)
@@ -41,50 +47,105 @@ def fixtures(method):
 	return json.loads(result.stdout) if method == "prepare_browser" else None
 
 
+def cleanup():
+	if not MANIFEST.exists():
+		print("No pending browser fixture run")
+		return
+	manifest = json.loads(MANIFEST.read_text())
+	if manifest.get("site") != LOCK["site"] or not re.fullmatch(r"[a-f0-9]{32}", manifest.get("run_id", "")):
+		raise RuntimeError("Invalid fixture recovery manifest; inspect it before cleanup")
+	fixtures("cleanup_browser", manifest["run_id"])
+	(PRIVATE / "browser-users.json").unlink(missing_ok=True)
+	MANIFEST.unlink()
+
+
+def run_egress_probes():
+	try:
+		compose(
+			"run",
+			"--rm",
+			"--no-deps",
+			"-e",
+			"WA_TEST_OUTPUT=/test-results/network-negative",
+			"-e",
+			"WA_NEGATIVE_NETWORK_PROBE=1",
+			"browser",
+			"node",
+			"node_modules/@playwright/test/cli.js",
+			"test",
+			"--project=desktop-light",
+			"--reporter=json",
+			"--max-failures=0",
+			capture_output=True,
+			text=True,
+		)
+	except subprocess.CalledProcessError as exc:
+		if exc.returncode != 1:
+			raise RuntimeError("Browser negative probe did not finish normally") from None
+		try:
+			verify_egress_report(json.loads(exc.stdout))
+		except (ValueError, KeyError, TypeError, IndexError):
+			raise RuntimeError("Browser negative report did not prove all intended guard failures") from None
+		print("PASS: HTTP, WebSocket and API egress probes failed only for their guard assertions")
+	else:
+		raise RuntimeError("Browser guard failed to reject deliberate external traffic")
+
+
+def egress():
+	# Negative probes use no account or server; the existing Compose file expects a file mount.
+	credentials = PRIVATE / "browser-users.json"
+	placeholder = not credentials.exists()
+	if placeholder:
+		with credentials.open("x"):
+			credentials.chmod(0o600)
+	try:
+		run_egress_probes()
+	finally:
+		if placeholder:
+			credentials.unlink()
+
+
 def browser():
 	credentials = PRIVATE / "browser-users.json"
+	if MANIFEST.exists() or credentials.exists():
+		raise RuntimeError(
+			"Pending browser fixture state; run quality.py cleanup before starting another run"
+		)
+	run_id = uuid.uuid4().hex
+	with MANIFEST.open("x") as stream:
+		MANIFEST.chmod(0o600)
+		json.dump({"site": LOCK["site"], "run_id": run_id}, stream)
 	try:
-		accounts = fixtures("prepare_browser")
-		credentials.write_text(json.dumps(accounts))
-		credentials.chmod(0o600)
+		accounts = fixtures("prepare_browser", run_id)
+		with credentials.open("x") as stream:
+			credentials.chmod(0o600)
+			json.dump(accounts, stream)
 		compose("run", "--rm", "--no-deps", "browser", "npm", "run", "typecheck")
 		compose("run", "--rm", "--no-deps", "browser", "npm", "run", "test:browser")
-		# A negative probe must exit nonzero for the guard's specific assertion.
-		try:
-			compose(
-				"run",
-				"--rm",
-				"--no-deps",
-				"-e",
-				"WA_TEST_OUTPUT=/test-results/network-negative",
-				"browser",
-				"npm",
-				"run",
-				"test:network-negative",
-				capture_output=True,
-				text=True,
-			)
-		except subprocess.CalledProcessError as exc:
-			if "Unexpected outbound request" not in exc.stdout:
-				raise RuntimeError("Browser negative probe failed for an unexpected reason") from None
-			print("PASS: deliberate browser egress was blocked and failed the test")
-		else:
-			raise RuntimeError("Browser guard failed to reject deliberate external traffic")
+		run_egress_probes()
 	finally:
-		# Delete only our owned synthetic users; never rotate real/admin credentials.
-		try:
-			fixtures("cleanup_browser")
-		finally:
-			credentials.unlink(missing_ok=True)
+		# The manifest survives cleanup failure, so recovery can target only this run.
+		cleanup()
 
 
 def main():
 	parser = argparse.ArgumentParser(description=__doc__)
-	parser.add_argument("action", choices=["setup", "docs", "lint", "unit", "integration", "browser", "all"])
+	parser.add_argument(
+		"action",
+		choices=["setup", "cleanup", "egress", "docs", "lint", "unit", "integration", "browser", "all"],
+	)
 	action = parser.parse_args().action
 	PRIVATE.mkdir(parents=True, exist_ok=True, mode=0o700)
 	(PRIVATE / "test-results").mkdir(exist_ok=True)
+	if action == "egress":
+		egress()
+		return
+	if action == "cleanup":
+		cleanup()
+		return
 	if action == "setup":
+		if MANIFEST.exists() or (PRIVATE / "browser-users.json").exists():
+			raise RuntimeError("Pending fixture state; run quality.py cleanup before setup")
 		# Placeholder exists only to satisfy the optional service's read-only mount.
 		credentials = PRIVATE / "browser-users.json"
 		credentials.touch(mode=0o600, exist_ok=True)
@@ -135,6 +196,7 @@ def main():
 if __name__ == "__main__":
 	try:
 		PRIVATE.mkdir(parents=True, exist_ok=True, mode=0o700)
+		PRIVATE.chmod(0o700)
 		with (PRIVATE / "quality.lock").open("w") as lock:
 			try:
 				fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)

@@ -10,6 +10,8 @@ from types import TracebackType
 from typing import Any
 from unittest.mock import patch
 
+LOCAL_INFRASTRUCTURE = (("mariadb", 3306), ("redis-cache", 6379), ("redis-queue", 6379))
+
 
 class UnexpectedNetwork(AssertionError):
 	pass

@@ -1,8 +1,19 @@
 import { test } from "./fixtures";
 
-test("deliberate external traffic must fail even when its error is caught", async ({ page }) => {
-  await page.goto("/login");
+test("egress:http", async ({ page }) => {
   await page.evaluate(async () => {
-    try { await fetch("https://provider.invalid/never-send"); } catch { /* Teardown must still fail. */ }
+    try { await fetch("https://provider.invalid/never-send"); } catch { /* Guard teardown must fail. */ }
   });
+});
+
+test("egress:websocket", async ({ page }) => {
+  await page.evaluate(() => new Promise<void>(resolve => {
+    const socket = new WebSocket("wss://provider.invalid/never-send");
+    socket.onclose = () => resolve();
+    socket.onerror = () => resolve();
+  }));
+});
+
+test("egress:api", async ({ request }) => {
+  try { await request.get("https://provider.invalid/never-send"); } catch { /* Guard teardown must fail. */ }
 });

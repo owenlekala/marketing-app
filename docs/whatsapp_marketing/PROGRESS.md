@@ -1,6 +1,6 @@
 # Progress and evidence
 
-Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-003 verified; WA-P0-004 implemented, final gate waiting for a stable shared runtime**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-004 verified; WA-P1-001 is next**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
@@ -46,7 +46,7 @@ Append one entry per task: task ID; status (Not started/In progress/Blocked/Veri
 
 ## Known implementation prerequisites
 
-- Finish WA-P0-004 real-browser qualification before beginning WA-P1-001 schema/roles/settings.
+- Begin WA-P1-001 schema/roles/settings using the verified P0 harness; keep sending disabled.
 - Verify current official Meta API version/permissions/payloads; some developer pages were rate-limited during planning.
 - Obtain business-owned credentials, approved templates and explicitly authorised test recipients during the relevant task.
 - Configure retention policy, rate controls and operational ownership before live enablement.
@@ -133,13 +133,13 @@ Status: **Verified** on 27 October 2026. Initial application commit: `971e7b5966
 
 ## WA-P0-004 — Test harness and deterministic adapters
 
-Status: **Blocked for final combined verification** on 27 October 2026. Harness implementation commits: `431c8b2e2c1879c296bd124c3a5ee1b45bd48d40` and `9d50ae11f2adb88d202ed9bd12437e50c315b7fc`. Acceptance scope: WA-A01 scaffold checks and WA-A18 executable governance. Production and feature-specific acceptance remain unqualified.
+Status: **Verified** on 27 October 2026 after the review and combined gate below. Harness implementation commits: `431c8b2e2c1879c296bd124c3a5ee1b45bd48d40` and `9d50ae11f2adb88d202ed9bd12437e50c315b7fc`. Acceptance scope: WA-A01 scaffold checks and WA-A18 executable governance. Production and feature-specific acceptance remain unqualified.
 
 - Added framework-independent clock/byte-transport protocols and scripted test adapters. Pure tests cover UTC advancement, rejected naive/backward time, scripted throttling/timeouts, exhausted/unused provider outcomes and stable captured requests. These are transport harness fixtures, not verified Meta payloads.
 - Added process-local socket/DNS/direct-IP/UDP guards and app test bases. A nested leaking-test probe proves that catching an unexpected-network exception still leaves a failing test. App integration tests allow only the owned DB/cache endpoints and restore user/transaction state after every test.
 - Inspected the pinned v16 runner and IntegrationTestCase rather than copying deprecated testing examples. The checkout rolls back at class cleanup; the app supplies per-test rollback. Initial executed suites passed four pure tests and four native integration tests, including a cross-test rollback probe and two-user native permission distinction. Additional site-gate/IP-family checks are being rerun.
 - Added a single quality controller for dependency setup, Ruff/mypy, pure unittest, Frappe runner and real Playwright. Python dependencies are hash locked; browser packages use npm lockfile integrity. The optional Chromium-only browser image is generated from the locked Bench base and exact Playwright package version, currently 1.58.2; no second editable version pin is maintained. Dependency installation is allowed network access separately from guarded test execution.
-- Browser setup uses fresh synthetic agent/manager credentials only, suppresses welcome email, captures credentials without printing, and removes owned users/private credential files in finally. A host lock prevents overlapping quality runs. Normal Bench services retain the host-private mask; browser mounts only synthetic test credentials and its artifact directory.
+- Browser setup uses fresh synthetic agent/manager credentials only, suppresses welcome email and captures credentials without printing. The hardened run ownership and recovery lifecycle is defined in [testing and acceptance](TESTING_AND_ACCEPTANCE.md#synthetic-users-data-and-cleanup). A host lock prevents overlapping quality runs. Normal Bench services retain the host-private mask; browser mounts only synthetic test credentials and its artifact directory.
 - Configured native login/Desk smoke coverage for light/dark 1440px, 1024px and 390px Chromium, keyboard focus, distinct sessions and native permission checks. External browser HTTP/WebSocket/API traffic fails the test; a separate negative probe must fail for the guard assertion. The Chromium-only build and locked tool installation are complete; native-browser execution is in progress.
 - Preliminary checks: Python lint/format and mypy pass across 23 source files. Documentation validation passes 48 files, 658 relative links, 56 distinct local sources, all requirement/task/acceptance IDs and dependencies, with zero duplicate groups or errors. Existing local license edit is preserved outside this task's changes.
 
@@ -156,10 +156,31 @@ The standard multi-browser image download was too slow to qualify the harness pr
 - Verified no Role rollback probe or synthetic users remained; temporary browser credentials were removed. Three standalone fixture create/delete cycles and three ordered integration-to-fixture cycles passed. A combined invocation had an intermittent fixture CLI failure; Bench's fallback exposed NameError and hid its original cause. The controller now reports the safe exception-class chain without captured credentials. No automatic retry masks fixture failures.
 - `python3 development/whatsapp_marketing/runtime.py verify` passed before the concurrent runtime expansion: Frappe/ERPNext/TAG Marketing installed, DB/Redis, module/dependency checks, credential isolation, web/assets, realtime, two registered workers, actual marketing-queue and scheduler probes true. This is historical evidence for that baseline, not qualification of subsequent runtime changes.
 
-### Current external blocker and exact next action
+### Runtime expansion follow-up
 
-Concurrent edits outside this task changed bootstrap, Compose, runtime lock/controller/verifier and the setup guide to add HRMS, localisation and payroll. A bootstrap container was actively modifying the shared Bench when inspected. The existing web container's Bench command discovery reported missing `hrms`, `za_local_core` and `za_local_payroll` modules while the site still listed Frappe, ERPNext and TAG Marketing. This makes a final combined run against that moving environment unreliable; these additional apps have not been qualified by this task.
+The environment blocker recorded above was resolved after the user requested HRMS, ZA Core and SA Payroll in the Desk. The three apps are now installed from pinned sources; runtime checks confirm their imports, dependency bounds, Desk tile/Dock records and assets. The earlier note is retained as history, not current runtime state.
 
-The user explicitly confirmed: **keep this task focused on the WhatsApp harness**. Preserved those runtime edits and the existing license change, and excluded them from the follow-up harness commit. Do not revert or take ownership of that parallel work to make this task appear green.
+This runtime installation does not close WA-P0-004. The full `quality.py all` command has not been rerun after adding HRMS and the localisation apps, so the task remains unchecked and its combined suite is still unqualified. Run that command from the app root before starting WA-P1-001 and record its current result.
 
-Next: once the shared bootstrap is finished and its containers can consistently import their configured apps, inspect the actual runtime and run `python3 development/whatsapp_marketing/quality.py all` from the app root. Record its exit status and fixture cleanup, revalidate documentation, then close only WA-P0-004. Its authoritative checkbox remains unchecked. Do not begin WA-P1-001 until this gate passes. The harness implementation and focused checks are complete; the full combined command has **not** been claimed as passing.
+### Payroll runtime installation evidence
+
+- Installed the requested `tagprojectsza/hrms` `version-16` checkout at `5c72c067c0a3bcc969a49c708b7bec545a046fe9`, existing `frappe_za_core` at `a6128f1661c5ad9cda4eabff86168fe5bf9818b9`, and existing `frappe_za_payroll` at `dc958457b062a76a04014957dba3e4c1cc02fa19`. Pinned `reportlab==5.1.0` for payroll's PDF support.
+- Extended Compose mounts, runtime lock, bootstrap and verifier. Framework/localisation source checkouts are mounted read-only and cloned at their pinned commits into Bench storage for dependency installation and asset builds; TAG Marketing remains soft-linked to its editable checkout.
+- `python3 tag_marketing/development/whatsapp_marketing/runtime.py config`: passed. `python3 tag_marketing/development/whatsapp_marketing/runtime.py up`: exited 0 after dependency-ordered installs, two migrations, complete asset build and service restart. No site or database volume was reset.
+- `docker exec tag-wa-dev-web-1 bench --site wa-marketing.localhost list-apps`: Frappe, ERPNext, TAG Marketing, HRMS, `za_local_core` and `za_local_payroll`.
+- `python3 tag_marketing/development/whatsapp_marketing/runtime.py verify`: exited 0. Verified app compatibility, the ZA Localisation Apps-screen tile, the Payroll Dock, database/Redis, built assets, web/realtime, marketing queue, scheduler and credential isolation.
+- Installation registers the apps and their default setup records; it does not configure a real company or approve statutory rate packs. Payroll remains unqualified for real pay processing until its setup and acceptance requirements are met.
+
+
+### Review corrections and final combined gate
+
+Verified on 27 October 2026; this follow-up closes WA-P0-004 only.
+
+- Review found cleanup could run after unsuccessful fixture setup using shared account names, and the negative browser check could accept an unrelated failure containing a matching string. Replaced these with run-owned identities/recovery manifests and a structured three-probe report oracle; see the [owning lifecycle and commands](TESTING_AND_ACCEPTANCE.md#synthetic-users-data-and-cleanup).
+- Added integration checks that cleanup preserves other runs/legacy accounts and validates all ownership markers before deleting any record. Added pure report checks rejecting missing/duplicate probes, unrelated/additional errors, retries, skips and expected-failure annotations. CLI fixture setup/cleanup now enforce the same local-infrastructure-only guard.
+- The shared bootstrap completed and recreated its services; imports for configured apps were available. This removed the historical blocker. The WhatsApp app still requires only ERPNext; extra app functionality remains outside this qualification.
+- `python3 development/whatsapp_marketing/quality.py all` exited **0**: structural documentation checks; Ruff lint/format; mypy across **25 sources**; **6 pure tests**; **7 Frappe integration tests** (plus rediscovery of the same six pure tests); strict TypeScript; **8 real Chromium cases**; and **3 deliberate HTTP/WebSocket/API probes** rejected only by their guard assertions. No retries masked failures.
+- The first repository-wide lint attempts correctly failed on import ordering/formatting in concurrently edited bootstrap/verifier files. Applied only mechanical corrections there, preserving their runtime changes; reran the full gate successfully. Kept those mixed runtime files outside the harness commit.
+- Browser cases passed for both synthetic users in desktop light/dark, tablet and mobile; eight fresh screenshots are under `development/whatsapp_marketing/.local/test-results/browser/*/native-desk.png`. Inspected dark desktop and mobile screenshots: native Desk shell remains intact. These images qualify the harness baseline only; marketing navigation and screens are later tasks.
+- Successful cleanup removed both private recovery files. The final read-only database check found no harness users or rollback Role. Added an ignore entry for Bench's generated public node_modules symlink; no generated assets or credentials are versioned.
+- `quality.py docs` and `git diff --check` are rerun after recording this evidence. Production remains unqualified and live sending disabled. Next dependency-ready task: **WA-P1-001**, the complete documented schema, role matrix, settings guards and idempotent constraints; its checkbox remains unchecked.
