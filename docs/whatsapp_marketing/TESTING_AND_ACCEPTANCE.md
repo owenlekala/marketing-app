@@ -1,6 +1,6 @@
 # Testing and acceptance
 
-Owner: WA-R17. Application tests have not run. This file defines required evidence; [progress](PROGRESS.md) records results. Use a disposable site, synthetic identities, a fake clock and a provider fake for automated tests. Real sends require an explicitly authorised test/pilot recipient.
+Owner: WA-R17. Harness checks are implemented in WA-P0-004; feature acceptance remains required as its code is added. This file defines required evidence; [progress](PROGRESS.md) records results. Use a disposable site, synthetic identities, a fake clock and a provider fake for automated tests. Real sends require an explicitly authorised test/pilot recipient.
 
 ## Test layers and commands
 
@@ -10,16 +10,33 @@ Owner: WA-R17. Application tests have not run. This file defines required eviden
 - Browser tests: native forms/lists/Page controls, both themes, keyboard, smaller viewports and two-user access. Use the app's selected supported Playwright harness established in P0, not unverified browser mocks.
 - Operational qualification: queue outages, worker termination, backup restore, load, retention and a limited authorised live pilot.
 
-Future command examples, inside `<bench-root>` on `<test-site>`:
+### Executable harness (WA-P0-004)
+
+Run from the `tag_marketing` repository root, with the pinned disposable environment running. The [quality controller](../../development/whatsapp_marketing/quality.py) owns commands; it uses the site/project in the [runtime lock](../../development/whatsapp_marketing/runtime.lock.json), never an implicit production site:
 
 ```sh
-bench --site <test-site> set-config allow_tests true
-bench --site <test-site> migrate
-bench --site <test-site> run-tests --app tag_marketing
-bench build --app tag_marketing
+python3 development/whatsapp_marketing/runtime.py up
+python3 development/whatsapp_marketing/quality.py setup
+python3 development/whatsapp_marketing/quality.py all
 ```
 
-Run the app's declared lint/type/browser scripts after bootstrap creates them. Document their exact commands then; do not claim an npm/pytest command exists before configuring it. Keep outbound networking disabled in the automated suite and fail on unexpected provider traffic.
+For focused work, replace `all` with `docs`, `lint`, `unit`, `integration` or `browser`. `setup` installs hash-locked Python tools and `npm ci --ignore-scripts` from package-lock.json into the browser service's node_modules volume. The `browser-setup` service has installation network access; test containers attach only to an internal Docker network with the real web/realtime services. Dependency installation requires network access; test execution permits only explicit local infrastructure. Run setup again when a lock changes. Setup generates its Dockerfile from the pinned Bench base in the runtime lock and the exact Playwright version in package.json, then builds a Chromium-only local image. The generated file is ignored build output, not a second editable configuration. Tested image IDs belong to progress; rebuilding may resolve newer OS packages and requires requalification. No optional browser service starts during ordinary application startup.
+
+- `docs`: executes the read-only canonical structural checker retained below, with no copied implementation.
+- `lint`: Ruff lint/format checks across app/runtime Python and mypy across the same sources. Ports, deterministic fakes, network helpers and pure unit tests require typed definitions; framework-facing code uses checked bodies with dynamic third-party imports. Browser execution also runs `npm run typecheck` (strict TypeScript). These checks do not imply complete static typing of Frappe.
+- `unit`: standard-library unittest discovery under `tag_marketing/tests/unit`, importing no Frappe/site code. Reuse [OfflineTestCase](../../tag_marketing/tests/support/cases.py). It denies socket/DNS/direct-IP/UDP egress and fails in cleanup even if the attempted-network exception was caught. Deliberate guard tests use an inner isolated guard; they prove a normal leaking test fails. Never catch or disable guards in ordinary tests.
+- `integration`: supported `bench --site <locked-site> run-tests --app tag_marketing` from the Bench root. Reuse [AppIntegrationTestCase](../../tag_marketing/tests/support/integration.py), not deprecated FrappeTestCase. It validates the disposable site, retains native Frappe setup and adds per-test rollback/user restoration and explicit MariaDB/Redis host-and-port allowances. This checkout rolls back at class cleanup; the app adds per-test isolation. The rollback probe inserts a synthetic Role, then the following test proves it is absent. The default Bench command also discovers the pure unittest classes under its unspecified category; use `unit` for site-independent runs.
+- `browser`: real Chromium and native login/Desk against the live disposable site, with independent agent/manager contexts, keyboard focus, light/dark mode and 1440/1024/390px viewports. [Playwright configuration](../../playwright.config.ts) owns project details. Same-site requests/realtime are allowed; external HTTP, WebSocket and Playwright API calls are rejected. Service workers are blocked. A separate deliberately failing egress probe must fail for the guard assertion, or the controller fails. Its output directory is separate from passing screenshots.
+
+The [application ports](../../tag_marketing/application/ports.py) expose an aware-UTC clock and byte HTTP transport. [Test fakes](../../tag_marketing/tests/support/fakes.py) advance explicit instants without sleeping and consume scripted responses/exceptions; extra or unused calls fail. This transport fake does not assert a Meta Graph API contract. Add versioned provider fixtures in P2/P3 when those payloads are verified; business-state and dispatch tests belong to their feature tasks.
+
+### Synthetic users, data and cleanup
+
+[Fixture helpers](../../tag_marketing/tests/support/site.py) own synthetic identities: an ERPNext Sales User and a System Manager, with welcome email disabled. They demonstrate distinct native System Settings write permissions. They are not the future Marketing roles; P1 adds those and their permission matrix. Integration fixtures roll back. Browser credentials are newly generated, captured without printing, placed in a mode-0600 ignored file, and mounted only into the browser service. Normal Bench services cannot read host `.local` credentials. Browser traces/video are off to avoid retaining login secrets; screenshots contain synthetic users only.
+
+The controller removes browser fixture users and credentials in `finally`; it refuses to overwrite existing fixture accounts or delete identities with a different ownership marker. A nonblocking host lock prevents overlapping quality runs. If a process is killed, inspect the ignored artifacts, then explicitly recover with `docker exec tag-wa-dev-web-1 bench --site wa-marketing.localhost execute tag_marketing.tests.support.site.cleanup_browser`, remove only `.local/browser-users.json` under the runtime directory, and rerun. Never run this fixture helper on a production site. Screenshots are under `development/whatsapp_marketing/.local/test-results/browser/`; they are local evidence, not proof of future marketing page parity.
+
+The Python guard is process-local, not a firewall. Automated app tests must use these bases and fakes. Run synchronous worker logic under the guard; future subprocess/worker tests must install a guard in that process or isolate network at container level. Do not send work to unguarded live workers to qualify provider behaviour. Browser containers additionally have no external Docker route. Installation, browser-driver control and database/cache traffic are infrastructure boundaries, not provider traffic.
 
 ## Acceptance scenarios
 

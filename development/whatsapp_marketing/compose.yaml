@@ -25,6 +25,34 @@ x-bench: &bench
   restart: "no"
 
 services:
+  browser: &browser
+    entrypoint: []
+    image: ${BROWSER_IMAGE:?Use runtime.py to select the browser toolchain}
+    build:
+      context: ./.local/browser-build
+    platform: linux/amd64
+    init: true
+    working_dir: /source/tag_marketing
+    shm_size: 1gb
+    volumes:
+      - ../..:/source/tag_marketing
+      - browser-node-modules:/source/tag_marketing/node_modules
+      - ./.local/browser-users.json:/run/test-users.json:ro
+      - ./.local/test-results:/test-results
+    tmpfs:
+      - /source/tag_marketing/development/whatsapp_marketing/.local:ro,noexec,nosuid,size=64k,mode=000
+    environment:
+      WA_BASE_URL: http://web:8000
+      WA_REALTIME_PORT: ${REALTIME_PORT:?Use runtime.py}
+      WA_TEST_USERS: /run/test-users.json
+      WA_TEST_OUTPUT: /test-results/browser
+    profiles: [test]
+    networks: [test]
+
+  browser-setup:
+    <<: *browser
+    networks: [default]
+
   mariadb:
     image: ${MARIADB_IMAGE:?Use runtime.py to load the image lock}
     platform: linux/amd64
@@ -87,11 +115,13 @@ services:
 
   web:
     <<: *bench
+    networks: [default, test]
     command: [bench, serve, --port, "8000", --noreload]
     ports: ["127.0.0.1:${WEB_PORT:?Use runtime.py}:8000"]
 
   realtime:
     <<: *bench
+    networks: [default, test]
     command: [env/bin/python, -m, frappe.realtime.server]
     ports: ["127.0.0.1:${REALTIME_PORT:?Use runtime.py}:${REALTIME_PORT:?Use runtime.py}"]
 
@@ -115,3 +145,9 @@ volumes:
   bench-data:
   db-data:
   queue-data:
+  browser-node-modules:
+
+networks:
+  default: {}
+  test:
+    internal: true

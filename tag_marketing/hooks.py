@@ -7,3 +7,6 @@ app_license = "mit"
 
 # Frappe is the framework; ERPNext is the only additional required app.
 required_apps = ["erpnext"]
+
+# Test-only site safety gate; no product fixture mutation during installation.
+before_tests = "tag_marketing.tests.support.site.require_disposable_site"

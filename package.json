@@ -1,0 +1,14 @@
+{
+  "name": "tag-marketing-development",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:browser": "playwright test",
+    "test:network-negative": "WA_NEGATIVE_NETWORK_PROBE=1 playwright test --project=desktop-light"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@types/node": "24.10.0",
+    "typescript": "5.9.3"
+  }
+}

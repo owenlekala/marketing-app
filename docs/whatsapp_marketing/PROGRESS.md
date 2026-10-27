@@ -1,6 +1,6 @@
 # Progress and evidence
 
-Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-003 verified; application scaffold installed**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-003 verified; WA-P0-004 harness verification in progress**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
@@ -46,7 +46,7 @@ Append one entry per task: task ID; status (Not started/In progress/Blocked/Veri
 
 ## Known implementation prerequisites
 
-- Next: WA-P0-004 configures the test harness and deterministic adapters before feature implementation.
+- Finish WA-P0-004 real-browser qualification before beginning WA-P1-001 schema/roles/settings.
 - Verify current official Meta API version/permissions/payloads; some developer pages were rate-limited during planning.
 - Obtain business-owned credentials, approved templates and explicitly authorised test recipients during the relevant task.
 - Configure retention policy, rate controls and operational ownership before live enablement.
@@ -130,3 +130,19 @@ Status: **Verified** on 27 October 2026. Initial application commit: `971e7b5966
 - Final canonical structural validation passes with zero link/dependency/duplicate errors. Instruction and old-location pointer links resolve; both old locations contain only their README pointer. Exactly the first three P0 task definitions are complete. Acceptance scope: WA-A01 scaffold installation/repeated migrations and WA-A18 instruction/versioned-documentation governance; app-specific permission, UI and business acceptance remain later work.
 - A concurrent local copyright edit to `license.txt` appeared during verification. Preserved it without staging it into the task evidence commit.
 - No new marketing UI is introduced in this task, so visual comparison belongs to P1. No live-provider traffic, production deployment, remote repository or payroll/framework modifications occurred. Next task: **WA-P0-004**, supported tests, deterministic provider/clock boundaries and browser harness. Production qualification remains outstanding.
+
+## WA-P0-004 — Test harness and deterministic adapters
+
+Status: **In progress** on 27 October 2026. Acceptance scope: WA-A01 scaffold checks and WA-A18 executable governance. Production and feature-specific acceptance remain unqualified.
+
+- Added framework-independent clock/byte-transport protocols and scripted test adapters. Pure tests cover UTC advancement, rejected naive/backward time, scripted throttling/timeouts, exhausted/unused provider outcomes and stable captured requests. These are transport harness fixtures, not verified Meta payloads.
+- Added process-local socket/DNS/direct-IP/UDP guards and app test bases. A nested leaking-test probe proves that catching an unexpected-network exception still leaves a failing test. App integration tests allow only the owned DB/cache endpoints and restore user/transaction state after every test.
+- Inspected the pinned v16 runner and IntegrationTestCase rather than copying deprecated testing examples. The checkout rolls back at class cleanup; the app supplies per-test rollback. Initial executed suites passed four pure tests and four native integration tests, including a cross-test rollback probe and two-user native permission distinction. Additional site-gate/IP-family checks are being rerun.
+- Added a single quality controller for dependency setup, Ruff/mypy, pure unittest, Frappe runner and real Playwright. Python dependencies are hash locked; browser packages use npm lockfile integrity. The optional Chromium-only browser image is generated from the locked Bench base and exact Playwright package version, currently 1.58.2; no second editable version pin is maintained. Dependency installation is allowed network access separately from guarded test execution.
+- Browser setup uses fresh synthetic agent/manager credentials only, suppresses welcome email, captures credentials without printing, and removes owned users/private credential files in finally. A host lock prevents overlapping quality runs. Normal Bench services retain the host-private mask; browser mounts only synthetic test credentials and its artifact directory.
+- Configured native login/Desk smoke coverage for light/dark 1440px, 1024px and 390px Chromium, keyboard focus, distinct sessions and native permission checks. External browser HTTP/WebSocket/API traffic fails the test; a separate negative probe must fail for the guard assertion. The Chromium-only build and locked tool installation are complete; native-browser execution is in progress.
+- Preliminary checks: Python lint/format and mypy pass across 23 source files. Documentation validation passes 48 files, 658 relative links, 56 distinct local sources, all requirement/task/acceptance IDs and dependencies, with zero duplicate groups or errors. Existing local license edit is preserved outside this task's changes.
+
+The standard multi-browser image download was too slow to qualify the harness promptly. Stopped only this task's superseded download processes and selected a smaller Chromium-only image on the already locked Python 3.14/Node 24 Bench base; the generator is owned by quality.py.
+
+Pending: finish native-browser screenshots and deliberate browser-egress rejection; final all-checks pass, cleanup inspection and completion evidence. Do not close this task based only on configuration or the passing Python checks.

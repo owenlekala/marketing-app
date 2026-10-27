@@ -41,3 +41,9 @@ Reviewed 27 October 2026. Local source facts are inspected, not proof that a sit
 ## Reference maintenance
 
 When a source changes, record review date and affected requirements. Resolve a mismatch against the actual supported deployment version; update the ADR if architecture changes. Keep copied snippets short and annotate whether a statement is a source fact or a chosen product rule.
+
+## Harness references reviewed 27 October 2026
+
+- [Frappe v16 integration testing](https://docs.frappe.io/framework-git/testing/integration-testing) and [unit testing](https://docs.frappe.io/framework-git/testing/unit-testing): supported classes. Actual rollback scope is verified against [the pinned IntegrationTestCase](../../../frappe/frappe/tests/classes/integration_test_case.py); this local implementation adds per-test rollback.
+- [Playwright network interception](https://playwright.dev/docs/network) and [BrowserContext](https://playwright.dev/docs/api/class-browsercontext): routes, service-worker blocking and WebSocket interception. The harness uses pinned Playwright 1.58.2, not an implicit latest toolchain.
+- [mypy configuration](https://mypy.readthedocs.io/en/stable/config_file.html): pyproject configuration and module overrides; dynamic Frappe code is distinguished from strictly typed boundaries.

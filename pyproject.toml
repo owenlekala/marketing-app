@@ -67,3 +67,15 @@ typing-modules = ["frappe.types.DF"]
 quote-style = "double"
 indent-style = "tab"
 docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.14"
+files = ["tag_marketing", "development/whatsapp_marketing"]
+follow_imports = "silent"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["tag_marketing.application.*", "tag_marketing.tests.support.fakes", "tag_marketing.tests.support.network", "tag_marketing.tests.support.cases", "tag_marketing.tests.unit.*"]
+disallow_untyped_defs = true

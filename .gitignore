@@ -14,3 +14,7 @@ node_modules/
 .coverage
 htmlcov/
 tag_marketing/public/dist/
+
+.mypy_cache/
+playwright-report/
+test-results/
