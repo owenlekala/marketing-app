@@ -174,7 +174,7 @@ This runtime installation does not close WA-P0-004. The full `quality.py all` co
 
 ### Review corrections and final combined gate
 
-Verified on 27 October 2026; this follow-up closes WA-P0-004 only.
+Verified on 27 October 2026; implementation commit `eb3d9df`. This follow-up closes WA-P0-004 only.
 
 - Review found cleanup could run after unsuccessful fixture setup using shared account names, and the negative browser check could accept an unrelated failure containing a matching string. Replaced these with run-owned identities/recovery manifests and a structured three-probe report oracle; see the [owning lifecycle and commands](TESTING_AND_ACCEPTANCE.md#synthetic-users-data-and-cleanup).
 - Added integration checks that cleanup preserves other runs/legacy accounts and validates all ownership markers before deleting any record. Added pure report checks rejecting missing/duplicate probes, unrelated/additional errors, retries, skips and expected-failure annotations. CLI fixture setup/cleanup now enforce the same local-infrastructure-only guard.
