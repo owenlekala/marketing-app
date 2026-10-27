@@ -1,0 +1,18 @@
+{
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-27 00:00:00.000000",
+ "modified": "2026-10-27 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "name": "WA Active Campaigns",
+ "module": "WhatsApp Marketing",
+ "label": "Active campaigns",
+ "type": "Custom",
+ "document_type": "Workspace",
+ "method": "tag_marketing.api.navigation.active_campaigns",
+ "is_standard": 1,
+ "is_public": 1,
+ "show_percentage_stats": 0,
+ "filters_json": "[]"
+}

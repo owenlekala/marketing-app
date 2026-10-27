@@ -1,0 +1,10 @@
+.tag-marketing {
+ .wa-state {
+  padding: var(--padding-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--fg-color);
+  overflow-wrap: anywhere;
+  progress { width: 100%; accent-color: var(--primary); }
+ }
+}

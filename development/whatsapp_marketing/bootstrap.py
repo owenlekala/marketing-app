@@ -13,13 +13,19 @@ SITE = LOCK["site"]
 ENV = dict(os.environ)
 ENV.update(
 	{
-		"GIT_CONFIG_COUNT": "3",
+		"GIT_CONFIG_COUNT": "6",
 		"GIT_CONFIG_KEY_0": "safe.directory",
 		"GIT_CONFIG_VALUE_0": "/source/frappe",
 		"GIT_CONFIG_KEY_1": "safe.directory",
 		"GIT_CONFIG_VALUE_1": "/source/erpnext",
 		"GIT_CONFIG_KEY_2": "safe.directory",
 		"GIT_CONFIG_VALUE_2": "/source/tag_marketing",
+		"GIT_CONFIG_KEY_3": "safe.directory",
+		"GIT_CONFIG_VALUE_3": "/source/hrms",
+		"GIT_CONFIG_KEY_4": "safe.directory",
+		"GIT_CONFIG_VALUE_4": "/source/za_local_core",
+		"GIT_CONFIG_KEY_5": "safe.directory",
+		"GIT_CONFIG_VALUE_5": "/source/za_local_payroll",
 	}
 )
 SENSITIVE: list[str] = []
@@ -98,38 +104,72 @@ def main():
 			["bench", "get-app", "--skip-assets", "erpnext", "/source/erpnext"],
 		)
 	check_revision(BENCH / "apps/erpnext", LOCK["sources"]["erpnext"])
-	app = BENCH / "apps/tag_marketing"
-	source = Path("/source/tag_marketing")
-	if not (source / "tag_marketing/hooks.py").is_file():
-		raise RuntimeError("Marketing source mount is missing; check the application checkout")
-	if not app.exists():
+	apps = {
+		"hrms": ("hrms", "hrms/hooks.py"),
+		"za_local_core": ("za_local_core", "za_local_core/hooks.py"),
+		"za_local_payroll": ("za_local_payroll", "za_local_payroll/hooks.py"),
+		"tag_marketing": ("tag_marketing", "tag_marketing/hooks.py"),
+	}
+	for app_name, (source_name, hook_path) in apps.items():
+		app = BENCH / "apps" / app_name
+		source = Path("/source") / source_name
+		if not (source / hook_path).is_file():
+			raise RuntimeError("%s source mount is missing; check the application checkout" % app_name)
+		if app_name != "tag_marketing" and app.is_symlink() and app.resolve() == source:
+			# Bench must build assets inside writable app directories. Repair only a
+			# matching link left by an earlier interrupted soft-link registration.
+			app.unlink()
+		if not app.exists():
+			run(
+				(
+					"Link the editable %s source checkout"
+					if app_name == "tag_marketing"
+					else "Clone locked %s source into Bench"
+				)
+				% app_name,
+				[
+					"bench",
+					"get-app",
+					"--skip-assets",
+					*(["--soft-link"] if app_name == "tag_marketing" else []),
+					app_name,
+					str(source),
+				],
+			)
+		if app_name == "tag_marketing":
+			if not app.is_symlink() or app.resolve() != source:
+				raise RuntimeError("Marketing must link to its canonical editable source checkout")
+		else:
+			if app.is_symlink() or not app.is_dir():
+				raise RuntimeError("%s must be a writable Bench clone for asset builds" % app_name)
+			check_revision(app, LOCK["sources"][source_name])
 		run(
-			"Register the single marketing source checkout",
+			"Refresh editable %s package" % app_name,
 			[
-				"bench",
-				"get-app",
-				"--soft-link",
-				"--skip-assets",
-				"tag_marketing",
-				str(source),
+				"uv",
+				"pip",
+				"install",
+				"--quiet",
+				"--no-deps",
+				"-e",
+				str(app),
+				"--python",
+				str(BENCH / "env/bin/python"),
 			],
 		)
-	if not app.is_symlink() or app.resolve() != source:
-		raise RuntimeError("Marketing app must link to the canonical host source, not a duplicate checkout")
-	run(
-		"Refresh editable marketing package",
-		[
-			"uv",
-			"pip",
-			"install",
-			"--quiet",
-			"--no-deps",
-			"-e",
-			str(app),
-			"--python",
-			str(BENCH / "env/bin/python"),
-		],
-	)
+	for package, version in LOCK["python_packages"].items():
+		run(
+			"Install locked Python dependency %s" % package,
+			[
+				"uv",
+				"pip",
+				"install",
+				"--quiet",
+				"--python",
+				str(BENCH / "env/bin/python"),
+				"%s==%s" % (package, version),
+			],
+		)
 	common = BENCH / "sites/common_site_config.json"
 	config = json.loads(common.read_text()) if common.exists() else {}
 	config.update(
@@ -172,21 +212,24 @@ def main():
 				"%",
 			],
 		)
-	installed = run("Check installed site apps", ["bench", "--site", SITE, "list-apps", "--format", "json"])
-	if "erpnext" not in installed:
-		run("Install ERPNext on disposable site", ["bench", "--site", SITE, "install-app", "erpnext"])
-	if "tag_marketing" not in installed:
-		run(
-			"Install marketing scaffold on disposable site",
-			["bench", "--site", SITE, "install-app", "tag_marketing"],
+	for app_name in ("erpnext", "hrms", "za_local_core", "za_local_payroll", "tag_marketing"):
+		installed = run(
+			"Check whether %s is installed" % app_name,
+			["bench", "--site", SITE, "list-apps", "--format", "json"],
 		)
+		if app_name not in installed:
+			run(
+				"Install %s on disposable site" % app_name, ["bench", "--site", SITE, "install-app", app_name]
+			)
 	for key, value in [("developer_mode", "1"), ("allow_tests", "true")]:
 		run("Configure development %s" % key, ["bench", "--site", SITE, "set-config", key, value])
 	for iteration in range(2):
 		run("Migrate disposable site (%s/2)" % (iteration + 1), ["bench", "--site", SITE, "migrate"])
 	run("Build installed application assets", ["bench", "build"])
 	run("Enable disposable-site scheduler", ["bench", "--site", SITE, "enable-scheduler"])
-	print("Bootstrap complete. Marketing scaffold installed; no outbound integration configured.")
+	print(
+		"Bootstrap complete. HRMS, ZA localisation, payroll and marketing apps installed; no outbound integration configured."
+	)
 
 
 if __name__ == "__main__":

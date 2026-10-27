@@ -1,0 +1,99 @@
+{
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-27 00:00:00.000000",
+ "modified": "2026-10-27 14:45:36.486266",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "name": "WhatsApp Marketing",
+ "module": "WhatsApp Marketing",
+ "label": "WhatsApp Marketing",
+ "title": "WhatsApp Marketing",
+ "type": "Workspace",
+ "standard": 1,
+ "public": 1,
+ "is_hidden": 0,
+ "icon": "message-circle",
+ "sequence_id": 30,
+ "for_user": "",
+ "content": "[{\"id\": \"wa-title\", \"type\": \"header\", \"data\": {\"text\": \"WhatsApp Marketing\", \"col\": 12}}, {\"id\": \"wa-readiness\", \"type\": \"paragraph\", \"data\": {\"text\": \"Sending is disabled. Configure the marketing company and policies in Settings. Campaign, consent, inbox and reporting services are not available yet; N/A means unavailable, not zero activity. Metrics will use the last 30 days once reporting is available.\", \"col\": 12}}, {\"id\": \"wa-card-0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Eligible marketing contacts\", \"col\": 4}}, {\"id\": \"wa-card-1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active campaigns\", \"col\": 4}}, {\"id\": \"wa-card-2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Delivered messages\", \"col\": 4}}, {\"id\": \"wa-card-3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Exact replies\", \"col\": 4}}, {\"id\": \"wa-card-4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Unassigned conversations\", \"col\": 4}}, {\"id\": \"wa-chart-0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Daily delivery outcomes\", \"col\": 6}}, {\"id\": \"wa-chart-1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Campaign dispatch outcomes\", \"col\": 6}}, {\"id\": \"wa-shortcut-0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Campaigns\", \"col\": 4}}, {\"id\": \"wa-shortcut-1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Imports\", \"col\": 4}}, {\"id\": \"wa-shortcut-2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Inbox\", \"col\": 4}}, {\"id\": \"wa-shortcut-3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Automations\", \"col\": 4}}, {\"id\": \"wa-shortcut-4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Settings\", \"col\": 4}}]",
+ "number_cards": [
+  {
+   "number_card_name": "WA Eligible Contacts",
+   "label": "Eligible marketing contacts"
+  },
+  {
+   "number_card_name": "WA Active Campaigns",
+   "label": "Active campaigns"
+  },
+  {
+   "number_card_name": "WA Delivered Messages",
+   "label": "Delivered messages"
+  },
+  {
+   "number_card_name": "WA Exact Replies",
+   "label": "Exact replies"
+  },
+  {
+   "number_card_name": "WA Unassigned Conversations",
+   "label": "Unassigned conversations"
+  }
+ ],
+ "charts": [
+  {
+   "chart_name": "WA Delivery Activity",
+   "label": "Daily delivery outcomes"
+  },
+  {
+   "chart_name": "WA Campaign Activity",
+   "label": "Campaign dispatch outcomes"
+  }
+ ],
+ "shortcuts": [
+  {
+   "type": "DocType",
+   "link_to": "WA Campaign",
+   "doc_view": "List",
+   "label": "Campaigns"
+  },
+  {
+   "type": "DocType",
+   "link_to": "WA Import Batch",
+   "doc_view": "List",
+   "label": "Imports"
+  },
+  {
+   "type": "Page",
+   "link_to": "wa-inbox",
+   "label": "Inbox"
+  },
+  {
+   "type": "DocType",
+   "link_to": "WA Automation",
+   "doc_view": "List",
+   "label": "Automations"
+  },
+  {
+   "type": "DocType",
+   "link_to": "WA Settings",
+   "label": "Settings"
+  }
+ ],
+ "links": [],
+ "quick_lists": [],
+ "custom_blocks": [],
+ "roles": [
+  {
+   "role": "Marketing User"
+  },
+  {
+   "role": "Marketing Manager"
+  },
+  {
+   "role": "Marketing Analyst"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}

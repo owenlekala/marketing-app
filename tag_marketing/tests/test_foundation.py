@@ -20,16 +20,11 @@ from tag_marketing.infrastructure.schema import (
 	constraint_name,
 )
 from tag_marketing.tests.support.integration import AppIntegrationTestCase
+from tag_marketing.tests.support.persistence import raw
 
 COMPANY = "_WA Foundation Company"
 OTHER = "_WA Other Company"
 
-
-def raw(doctype, **values):
-	"""Synthetic SQL fixtures, never a public application write path."""
-	doc = frappe.get_doc({"doctype": doctype, "name": frappe.generate_hash(length=16), **values})
-	doc.db_insert()
-	return doc
 
 
 class TestFoundation(AppIntegrationTestCase):

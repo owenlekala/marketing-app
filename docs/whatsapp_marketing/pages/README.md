@@ -17,6 +17,20 @@ Reports is a Sidebar section containing named Script Report links. Connections a
 
 The Overview workspace is the home destination for Marketing User/Manager/Analyst according to capability; Agent-only users open Inbox. Missing role visibility never substitutes for endpoint/document checks. Native document titles and Page names must not collide with ERPNext CRM/Campaign routes.
 
+## Native sidebar hierarchy
+
+Use the installed HRMS Recruitment and ERPNext CRM Sidebar pattern: an icon on each top-level row, indented child links and native collapsible section controls. Overview remains the first standalone row. Start sections closed; let the framework preserve each user's expansion state and remove inaccessible links and empty groups.
+
+- Overview (`house`): the workspace home.
+- Audiences (`users`): Contacts, Audience Segments.
+- Messaging (`megaphone`): Campaigns, Templates.
+- Conversations (`message-circle`): Inbox.
+- Automation (`workflow`): Automations.
+- Reports (`chart-column`): the named Script Reports defined in [Reports](REPORTS.md).
+- Setup (`settings`): Connections, Rate Cards, Settings. Rate Cards belong to the [cost-report configuration](REPORTS.md).
+
+Each destination appears once. Imports remain a Contacts action; sending numbers remain linked from Connections. Do not add technical processing records as extra menu entries. Use standard Sidebar Section Break records with `indent=1`, `collapsible=1`, `child=0`; contained links use `child=1`, without repeated icons. Keep the native Dock and the TAG Marketing Apps-screen logo; this hierarchy does not introduce custom navigation JavaScript or CSS.
+
 ## Shared page contract
 
 Every page inherits the [design system](../UI_DESIGN_SYSTEM.md), [field definitions](../DATA_MODEL.md), [wire contracts](../API_CONTRACTS.md) and [permission policy](../PERMISSIONS_AND_PRIVACY.md). Individual page files define layout, visible capabilities, actions and feature-specific UI states; they do not redefine those shared contracts.

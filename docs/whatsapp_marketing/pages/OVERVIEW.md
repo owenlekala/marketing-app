@@ -6,7 +6,7 @@ Page contract: **WA-UI-OVERVIEW**. Sidebar label: **Overview**. [Navigation inde
 
 Native Workspace named WhatsApp Marketing; home destination in the owned Sidebar.
 
-**Users:** Marketing User/Manager see authorised metrics; Analyst sees aggregate-only content; Agent uses Inbox shortcut and assigned-work counts.
+**Users:** Marketing User/Manager see authorised metrics; Analyst sees aggregate-only content. Agent-only users land in Inbox as defined in the [navigation index](README.md).
 
 ## Layout and fields
 
@@ -28,7 +28,7 @@ Cards call permission-scoped metric/query services. Do not aggregate unrestricte
 
 ## UI states, access and responsive behaviour
 
-Initial site shows setup checklist and zero/empty business activity. Failed metric loading offers query retry, never a zero disguised as success. Analyst receives no raw message drill-down. Native widgets wrap at narrow widths and inherit both themes.
+During the P1 foundation, cards show N/A and charts show an explicit unavailable message; no metric services or business activity are claimed. Once reporting is implemented, an initial site shows the setup checklist and measured zero/empty activity. Failed metric loading offers query retry, never a zero disguised as success. Analyst receives no raw message drill-down. Native widgets wrap at narrow widths and inherit both themes.
 
 ## Interfaces and records
 

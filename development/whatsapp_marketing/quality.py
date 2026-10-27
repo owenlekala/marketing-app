@@ -105,7 +105,7 @@ def egress():
 			credentials.unlink()
 
 
-def browser():
+def browser(project=None):
 	credentials = PRIVATE / "browser-users.json"
 	if MANIFEST.exists() or credentials.exists():
 		raise RuntimeError(
@@ -121,7 +121,22 @@ def browser():
 			credentials.chmod(0o600)
 			json.dump(accounts, stream)
 		compose("run", "--rm", "--no-deps", "browser", "npm", "run", "typecheck")
-		compose("run", "--rm", "--no-deps", "browser", "npm", "run", "test:browser")
+		compose(
+			"run",
+			"--rm",
+			"--no-deps",
+			"-e",
+			"WA_TEST_OUTPUT=/test-results/browser/" + run_id,
+			"browser",
+			"npm",
+			"run",
+			"test:browser",
+			*(["--", "--project=" + project] if project else []),
+		)
+		print(
+			"Browser evidence: development/whatsapp_marketing/.local/test-results/browser/" + run_id,
+			flush=True,
+		)
 		run_egress_probes()
 	finally:
 		# The manifest survives cleanup failure, so recovery can target only this run.
@@ -134,7 +149,11 @@ def main():
 		"action",
 		choices=["setup", "cleanup", "egress", "docs", "lint", "unit", "integration", "browser", "all"],
 	)
-	action = parser.parse_args().action
+	parser.add_argument("--browser-project", choices=["desktop-light", "desktop-dark", "tablet", "mobile"])
+	args = parser.parse_args()
+	action = args.action
+	if args.browser_project and action != "browser":
+		parser.error("--browser-project is supported only with browser")
 	PRIVATE.mkdir(parents=True, exist_ok=True, mode=0o700)
 	(PRIVATE / "test-results").mkdir(exist_ok=True)
 	if action == "egress":
@@ -190,7 +209,7 @@ def main():
 	if action in ("integration", "all"):
 		compose("exec", "-T", "web", "bench", "--site", LOCK["site"], "run-tests", "--app", "tag_marketing")
 	if action in ("browser", "all"):
-		browser()
+		browser(args.browser_project)
 
 
 if __name__ == "__main__":

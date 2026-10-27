@@ -24,7 +24,7 @@ Default last 30 days; explicit company, sender, campaign, state and timestamp ba
 
 Run/Refresh use permission-aware query services. Export is a persisted operation producing a private File and neutralised CSV cells; Analyst has no raw export by default. Metric drill-down retains filters and access scope. Rates are explicit dated estimate inputs; no fabricated price or ROI.
 
-Managers maintain WA Rate Card through a native configuration link under this section; currency, effective period, market/category rows and official source are required. Active cards are immutable and cannot overlap for the same pricing scope. Missing matching currency produces unavailable estimates; no implicit exchange-rate assumption.
+Managers maintain WA Rate Card through the native configuration link defined in the [sidebar hierarchy](README.md#native-sidebar-hierarchy); currency, effective period, market/category rows and official source are required. Active cards are immutable and cannot overlap for the same pricing scope. Missing matching currency produces unavailable estimates; no implicit exchange-rate assumption.
 
 ## UI states, access and responsive behaviour
 

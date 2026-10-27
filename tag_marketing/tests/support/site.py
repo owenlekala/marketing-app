@@ -13,6 +13,10 @@ from tag_marketing.tests.support.network import LOCAL_INFRASTRUCTURE, NetworkGua
 USERS = {
 	"agent": ("wa-harness-agent@example.invalid", "Sales User"),
 	"manager": ("wa-harness-manager@example.invalid", "System Manager"),
+	"marketing": ("wa-marketing@example.invalid", "Marketing User"),
+	"marketing_manager": ("wa-marketing-mgr@example.invalid", "Marketing Manager"),
+	"analyst": ("wa-analyst@example.invalid", "Marketing Analyst"),
+	"inbox": ("wa-inbox@example.invalid", "WhatsApp Agent"),
 }
 
 
@@ -83,6 +87,8 @@ def prepare_browser(run_id):
 			password = secrets.token_urlsafe(36)
 			user = create_user(kind, password, run_id)
 			result[kind] = {"username": user.name, "password": password}
+		from tag_marketing.tests.support.progress import prepare
+		result["operations"] = prepare(run_id)
 	return result
 
 
@@ -98,6 +104,8 @@ def cleanup_records(run_id):
 		if user.first_name != "WA Harness " + kind.title() or user.last_name != run_id:
 			raise RuntimeError("Refusing to delete a user not owned by this fixture run")
 		owned.append(email)
+	from tag_marketing.tests.support.progress import cleanup
+	cleanup(run_id)
 	for email in owned:
 		frappe.delete_doc("User", email, ignore_permissions=True)
 
@@ -107,3 +115,5 @@ def cleanup_browser(run_id):
 	frappe.set_user("Administrator")
 	with fixture_transaction():
 		cleanup_records(run_id)
+	from tag_marketing.tests.support.progress import finish_cleanup
+	finish_cleanup(run_id)

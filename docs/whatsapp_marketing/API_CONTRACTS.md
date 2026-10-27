@@ -56,6 +56,27 @@ Authenticated POST to `tag_marketing.api.inbox.send_reply`:
 
 Response data contains `message`, `operation` and `status="Queued"`; recipient/company come from the authorised conversation. Repeating this command ID must not submit another logical reply. A list response uses `data.items`, `data.next_cursor` (null at the end) and `data.has_more=false` at the final page.
 
+## Operation progress foundation
+
+`operations.get(operation)` is an authenticated GET query. It returns the shared envelope with `data.operation`, `status`, `progress_percent` (0..100), UTC `heartbeat_at`, `result`, `result_file` and `error`. Pending/Running are nonterminal; Succeeded/Failed/Cancelled are terminal. A Failed operation is a successful progress read with a generic `OPERATION_FAILED` diagnostic, not an HTTP success for the underlying command.
+
+Recheck native operation read capability, configured company and User Permissions, requester or Marketing Manager status, then the current target's company and native read permission. Missing, revoked, cross-company and unsupported targets all return `NOT_FOUND` (404). The initial target registry supports `connections.validate_connection`, `connections.sync_numbers` and `connections.sync_templates`, each targeting an existing WA Connection. Their producers remain disabled until P2. Other feature tasks must register their exact operation kind and target policy when implementing the producer; unregistered/targetless jobs fail closed.
+
+P1 returns `result=null` and `result_file=null`: raw result_json, request hashes, actor identifiers, provider diagnostics and attachments are never serialized. Each producer's feature task must add a bounded safe result projection and private-file authorization before exposing its output. Generic WA Operation List/REST reads and all writes remain closed. Progress retrieval does not enqueue, retry or mutate work.
+
+The shared server boundary maps registered domain errors to safe translated envelopes and UUID correlation IDs. Unexpected errors log only correlation ID and exception class, and return INTERNAL_ERROR (500) without exception text/arguments/tracebacks. A mutating boundary rolls back to its own savepoint on failure; it never commits and does not replace command-specific authorization, optimistic revision checks or durable idempotency. `require_revision` requires the exact stored revision and reports INVALID_INPUT or STALE_DOCUMENT. Authentication/permission exceptions retain Frappe's native boundary.
+
+## Foundation navigation interfaces
+
+WA-P1-002 supplies read-only availability adapters under `tag_marketing.api.navigation`; they do not implement the later feature commands. Native Frappe widgets require their own result shape, so these return the following objects directly inside Frappe's `message` envelope rather than the command envelope above. Authenticated GET and native-widget POST are supported; neither mutates state or accepts Guest.
+
+- `summary()` requires Marketing User/Manager/Analyst or System Manager and permitted configured company. It returns `availability` (Setup Required or Unavailable), `sending_enabled=false`, `metrics_available=false`, translated `reason`, `period="Last 30 Days"` and `metrics` with all five values null. No company identity, credential or raw record is returned.
+- `eligible_contacts(filters)`, `active_campaigns(filters)`, `delivered_messages(filters)`, `exact_replies(filters)`, `unassigned_conversations(filters)` use the same access/scope check. Only absent/empty filters are accepted. Result: `{"value":null,"fieldtype":"Int"}` so native cards show N/A rather than fabricated zero.
+- `activity(chart_name, ...)` accepts only the two owned chart identities from the [Overview](pages/OVERVIEW.md). Native chart date/range arguments do not compute activity during this foundation stage. Result: `{"labels":[],"datasets":[],"availability":"Unavailable"}`. The method is uncached; future user-scoped data must never use a chart-name-only cache.
+- `inbox_readiness()` requires WhatsApp Agent or Marketing Manager and permitted configured company. Result: `{"availability":"Unavailable","reason":"..."}`. It exposes no conversations, composer or send capability.
+
+These are constant availability responses, not paginated resources or asynchronous jobs. Forbidden access raises native PermissionError (403); unsupported filters/chart identities raise native ValidationError. Script Report execution raises a translated unavailable error after native report-role and company checks. Replace these adapters with verified feature queries only in the owning feature task; do not silently enable sending or treat schema presence as service readiness.
+
 ## Connection commands
 
 - `connections.validate_connection(connection, expected_modified, request_id)` — System Manager; starts credential/version/WABA validation, returns operation. Draft/Degraded/Disabled may move to Verifying; only completed evidence enables Ready.

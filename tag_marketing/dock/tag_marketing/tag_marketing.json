@@ -1,0 +1,22 @@
+{
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-27 00:00:00.000000",
+ "modified": "2026-10-27 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Dock",
+ "name": "tag_marketing",
+ "app": "tag_marketing",
+ "standard": 1,
+ "user": "",
+ "items": [
+  {
+   "link_type": "Sidebar",
+   "link_to": "WhatsApp Marketing",
+   "title": "WhatsApp Marketing",
+   "icon": "message-circle",
+   "hidden": 0,
+   "added": 0
+  }
+ ]
+}

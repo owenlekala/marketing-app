@@ -72,12 +72,16 @@ def inside():
 import hashlib, json, frappe
 from frappe.utils.password import get_decrypted_password
 from tag_marketing.infrastructure.schema import UNIQUE_KEYS, INDEXES, constraint_name
+from tag_marketing.setup.navigation import owned_documents, check_navigation_ownership
 frappe.init(site=%r, sites_path='.')
 frappe.connect()
 try:
  assert set(frappe.get_installed_apps()) == {'frappe','erpnext','tag_marketing'}
  assert frappe.db.count('DocType', {'module':'WhatsApp Marketing'}) == 36
  assert frappe.db.get_single_value('WA Settings','sending_enabled') == 0
+ check_navigation_ownership()
+ for source in owned_documents():
+  assert frappe.db.exists(source['doctype'],source['name']),source['name']
  for manifest,prefix in ((UNIQUE_KEYS,'uq'),(INDEXES,'ix')):
   for kind,keys in manifest.items():
    for fields in keys:

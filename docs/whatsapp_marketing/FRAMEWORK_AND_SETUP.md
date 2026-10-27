@@ -82,3 +82,7 @@ Verify a scheduled/queued synthetic diagnostic operation from the application; d
 ## Production boundary
 
 Use a custom immutable image containing compatible apps and built assets, dedicated workers, correct realtime entrypoints, private storage, TLS and external secret management. Never use `bench start`, developer mode or a test site as production deployment. Follow [operations/release](OPERATIONS_AND_RELEASE.md).
+
+## Native navigation metadata revisions
+
+In the pinned [JSON importer](../../../frappe/frappe/modules/import_file.py), migration hashes apply to DocTypes; other standard records, including Sidebar and Workspace, are skipped when the JSON `modified` timestamp is not newer than the stored record. Advance that timestamp whenever changing shipped navigation metadata. Verify the persisted content after an ordinary migration, not only a forced test import. Keep site/user changes in the native Custom Sidebar, non-standard Dock and Custom Workspace layers; they are separate from the app's standard base. Migration must preserve those layers. Do not use a forced import of all navigation on every application request.

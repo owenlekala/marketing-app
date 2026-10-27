@@ -25,3 +25,22 @@ has_permission = {
 }
 
 doc_events = {"DocShare": {"validate": "tag_marketing.infrastructure.permissions.reject_owned_share"}}
+
+# The current Desk Apps screen reads this hook; legacy icon rows alone do not show an app.
+app_logo_url = "/assets/tag_marketing/images/tag-marketing.svg"
+add_to_apps_screen = [
+	{
+		"name": app_name,
+		"title": app_title,
+		"logo": app_logo_url,
+		"route": "",
+		"sequence_id": 30,
+		"has_permission": "tag_marketing.application.navigation.can_open_app",
+	}
+]
+before_install = "tag_marketing.setup.navigation.check_navigation_ownership"
+before_migrate = "tag_marketing.setup.navigation.check_navigation_ownership"
+
+# Native asset bundling; styles are scoped to owned content.
+app_include_js = ["tag_marketing.bundle.js"]
+app_include_css = ["tag_marketing.bundle.css"]

@@ -1,0 +1,34 @@
+{
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-27 00:00:00.000000",
+ "modified": "2026-10-27 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "name": "WA Campaign Activity",
+ "module": "WhatsApp Marketing",
+ "chart_name": "WA Campaign Activity",
+ "chart_type": "Custom",
+ "source": "WA Marketing Activity",
+ "type": "Line",
+ "is_standard": 1,
+ "is_public": 1,
+ "timeseries": 1,
+ "timespan": "Last Month",
+ "time_interval": "Daily",
+ "empty_state_message": "Activity reporting is unavailable until campaign and delivery services are verified.",
+ "roles": [
+  {
+   "role": "Marketing User"
+  },
+  {
+   "role": "Marketing Manager"
+  },
+  {
+   "role": "Marketing Analyst"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}

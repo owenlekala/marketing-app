@@ -1,0 +1,12 @@
+{
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-27 00:00:00.000000",
+ "modified": "2026-10-27 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "name": "WA Marketing Activity",
+ "module": "WhatsApp Marketing",
+ "source_name": "WA Marketing Activity",
+ "timeseries": 1
+}

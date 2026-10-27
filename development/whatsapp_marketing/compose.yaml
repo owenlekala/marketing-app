@@ -13,6 +13,9 @@ x-bench: &bench
         nocopy: true
     - ../../../frappe:/source/frappe:ro
     - ../../../erpnext:/source/erpnext:ro
+    - ../../../hrms:/source/hrms:ro
+    - ../../../frappe_za_core:/source/za_local_core:ro
+    - ../../../frappe_za_payroll:/source/za_local_payroll:ro
     - ../..:/source/tag_marketing
     - ./runtime.lock.json:/runtime/runtime.lock.json:ro
     - ./bootstrap.py:/runtime/bootstrap.py:ro

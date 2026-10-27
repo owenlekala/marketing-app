@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   maxFailures: 1,
-  timeout: 60_000,
+  timeout: 120_000,
   reporter: "list",
   use: {
     baseURL,

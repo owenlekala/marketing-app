@@ -11,6 +11,8 @@ ROLES = ("Marketing User", "Marketing Manager", "WhatsApp Agent", "Marketing Ana
 
 
 def sync_foundation():
+	from tag_marketing.setup.navigation import sync_desktop_icon
+
 	if frappe.db.exists("DocShare", {"share_doctype": ["in", list(PARENT_TYPES)]}):
 		frappe.throw(frappe._("Remove unsupported marketing document shares before migrating."))
 	for role in ROLES:
@@ -25,6 +27,8 @@ def sync_foundation():
 	for doctype, keys in INDEXES.items():
 		for fields in keys:
 			frappe.db.add_index(doctype, [f"`{field}`" for field in fields], constraint_name("ix", fields))
+
+	sync_desktop_icon()
 
 
 def ensure_unique(doctype, fields):

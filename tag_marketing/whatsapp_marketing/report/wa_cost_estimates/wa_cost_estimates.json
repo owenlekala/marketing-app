@@ -1,0 +1,25 @@
+{
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-27 00:00:00.000000",
+ "modified": "2026-10-27 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Report",
+ "name": "WA Cost Estimates",
+ "module": "WhatsApp Marketing",
+ "report_name": "WA Cost Estimates",
+ "ref_doctype": "Workspace",
+ "report_type": "Script Report",
+ "is_standard": "Yes",
+ "disabled": 0,
+ "prepared_report": 0,
+ "add_total_row": 0,
+ "roles": [
+  {
+   "role": "Marketing Analyst"
+  },
+  {
+   "role": "Marketing Manager"
+  }
+ ]
+}

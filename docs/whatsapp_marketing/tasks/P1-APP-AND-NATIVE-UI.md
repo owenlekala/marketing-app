@@ -20,7 +20,7 @@
 
 ## WA-P1-002
 
-- [ ] **Register owned Dock, Sidebar and workspace**
+- [x] **Register owned Dock, Sidebar and workspace**
 
 **Depends on:** `WA-P1-001`
 

@@ -1,0 +1,224 @@
+{
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-27 00:00:00.000000",
+ "modified": "2026-10-27 14:45:36.482719",
+ "docstatus": 0,
+ "doctype": "Sidebar",
+ "name": "WhatsApp Marketing",
+ "module": "WhatsApp Marketing",
+ "title": "WhatsApp Marketing",
+ "app": "tag_marketing",
+ "header_icon": "message-circle",
+ "standard": 1,
+ "items": [
+  {
+   "type": "Link",
+   "label": "Overview",
+   "link_type": "Workspace",
+   "link_to": "WhatsApp Marketing",
+   "icon": "house",
+   "is_default_module": 1,
+   "child": 0,
+   "indent": 0
+  },
+  {
+   "type": "Section Break",
+   "label": "Audiences",
+   "icon": "users",
+   "child": 0,
+   "indent": 1,
+   "collapsible": 1,
+   "keep_closed": 1
+  },
+  {
+   "type": "Link",
+   "label": "Contacts",
+   "link_type": "DocType",
+   "link_to": "WA Contact",
+   "is_default_module": 1,
+   "child": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Audience Segments",
+   "link_type": "DocType",
+   "link_to": "WA Audience Segment",
+   "is_default_module": 1,
+   "child": 1,
+   "indent": 0
+  },
+  {
+   "type": "Section Break",
+   "label": "Messaging",
+   "icon": "megaphone",
+   "child": 0,
+   "indent": 1,
+   "collapsible": 1,
+   "keep_closed": 1
+  },
+  {
+   "type": "Link",
+   "label": "Campaigns",
+   "link_type": "DocType",
+   "link_to": "WA Campaign",
+   "is_default_module": 1,
+   "child": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Templates",
+   "link_type": "DocType",
+   "link_to": "WA Template",
+   "is_default_module": 1,
+   "child": 1,
+   "indent": 0
+  },
+  {
+   "type": "Section Break",
+   "label": "Conversations",
+   "icon": "message-circle",
+   "child": 0,
+   "indent": 1,
+   "collapsible": 1,
+   "keep_closed": 1
+  },
+  {
+   "type": "Link",
+   "label": "Inbox",
+   "link_type": "Page",
+   "link_to": "wa-inbox",
+   "is_default_module": 1,
+   "child": 1,
+   "indent": 0
+  },
+  {
+   "type": "Section Break",
+   "label": "Automation",
+   "icon": "workflow",
+   "child": 0,
+   "indent": 1,
+   "collapsible": 1,
+   "keep_closed": 1
+  },
+  {
+   "type": "Link",
+   "label": "Automations",
+   "link_type": "DocType",
+   "link_to": "WA Automation",
+   "is_default_module": 1,
+   "child": 1,
+   "indent": 0
+  },
+  {
+   "type": "Section Break",
+   "label": "Reports",
+   "icon": "chart-column",
+   "child": 0,
+   "indent": 1,
+   "collapsible": 1,
+   "keep_closed": 1
+  },
+  {
+   "type": "Link",
+   "label": "Campaign Performance",
+   "link_type": "Report",
+   "link_to": "WA Campaign Performance",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Recipient Outcomes",
+   "link_type": "Report",
+   "link_to": "WA Recipient Outcomes",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Consent and Suppression",
+   "link_type": "Report",
+   "link_to": "WA Consent and Suppression",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Automation Executions",
+   "link_type": "Report",
+   "link_to": "WA Automation Executions",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Inbox Workload",
+   "link_type": "Report",
+   "link_to": "WA Inbox Workload",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Connection Health",
+   "link_type": "Report",
+   "link_to": "WA Connection Health",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Cost Estimates",
+   "link_type": "Report",
+   "link_to": "WA Cost Estimates",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Section Break",
+   "label": "Setup",
+   "icon": "settings",
+   "child": 0,
+   "indent": 1,
+   "collapsible": 1,
+   "keep_closed": 1
+  },
+  {
+   "type": "Link",
+   "label": "Connections",
+   "link_type": "DocType",
+   "link_to": "WA Connection",
+   "is_default_module": 1,
+   "child": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Rate Cards",
+   "link_type": "DocType",
+   "link_to": "WA Rate Card",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  },
+  {
+   "type": "Link",
+   "label": "Settings",
+   "link_type": "DocType",
+   "link_to": "WA Settings",
+   "child": 1,
+   "is_default_module": 1,
+   "indent": 0
+  }
+ ]
+}

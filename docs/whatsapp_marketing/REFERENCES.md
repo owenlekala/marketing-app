@@ -11,6 +11,8 @@ Reviewed 27 October 2026. Local source facts are inspected, not proof that a sit
 
 ## Navigation and widgets
 
+Reviewed 27 October 2026 for WA-P1-002: [HRMS Recruitment Sidebar](../../../hrms/hrms/recruitment/sidebar/recruitment/recruitment.json) supplies the native icon-heading/indented-dropdown example; [Sidebar rendering](../../../frappe/frappe/public/js/frappe/ui/sidebar/sidebar_item.js) and [Apps-screen rendering](../../../frappe/frappe/desk/page/desktop/desktop.js) establish the actual local extension points. HRMS remains a reference, not an app dependency.
+
 - [ERPNext Dock](../../../erpnext/erpnext/dock/erpnext/erpnext.json), [CRM Sidebar](../../../erpnext/erpnext/crm/sidebar/crm/crm.json), [CRM Workspace](../../../erpnext/erpnext/crm/workspace/crm/crm.json).
 - [Dock controller](../../../frappe/frappe/desk/doctype/dock/dock.py), [Sidebar controller](../../../frappe/frappe/desk/doctype/sidebar/sidebar.py), [Workspace controller](../../../frappe/frappe/desk/doctype/workspace/workspace.py), [Number Card metadata](../../../frappe/frappe/desk/doctype/number_card/number_card.json).
 - [Existing payroll navigation](../../../frappe_za_payroll/za_local_payroll/dock/za_local_payroll/za_local_payroll.json), [dashboard installation](../../../frappe_za_payroll/za_local_payroll/install.py), [payroll hooks](../../../frappe_za_payroll/za_local_payroll/hooks.py). These demonstrate suite integration but are not dependencies of marketing.
