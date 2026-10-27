@@ -1,8 +1,10 @@
 """End-to-end disposable runtime probes; no credentials or message traffic."""
 
+import importlib.metadata
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 import tomllib
@@ -36,15 +38,48 @@ def main():
 		result["database_version"] = frappe.db.sql("select version()")[0][0]
 		result["redis_cache"] = bool(frappe.cache.ping())
 		result["redis_queue"] = bool(get_redis_conn().ping())
-		if not {"frappe", "erpnext", "tag_marketing"}.issubset(result["apps"]):
-			raise RuntimeError("Required site apps are missing")
-		source = Path("/source/tag_marketing")
-		if (BENCH / "apps/tag_marketing").resolve() != source:
-			raise RuntimeError("Bench is not using the canonical marketing source")
-		metadata = tomllib.loads((source / "pyproject.toml").read_text())
-		for app, bounds in metadata["tool"]["bench"]["frappe-dependencies"].items():
-			if frappe.get_attr(app + ".__version__") not in SpecifierSet(bounds):
-				raise RuntimeError("Incompatible required application: " + app)
+		required_apps = {"frappe", "erpnext", "hrms", "za_local_core", "za_local_payroll", "tag_marketing"}
+		if not required_apps.issubset(result["apps"]):
+			raise RuntimeError(
+				"Required site apps are missing: " + ", ".join(sorted(required_apps - set(result["apps"])))
+			)
+		for app in ("hrms", "za_local_core", "za_local_payroll", "tag_marketing"):
+			source = Path("/source") / app
+			app_path = BENCH / "apps" / app
+			if app == "tag_marketing":
+				if app_path.resolve() != source:
+					raise RuntimeError("Bench is not using the canonical marketing source")
+			else:
+				if app_path.is_symlink():
+					raise RuntimeError("%s must be cloned into writable Bench storage" % app)
+				revision = subprocess.check_output(
+					["git", "-C", str(app_path), "rev-parse", "HEAD"], text=True
+				).strip()
+				if revision != LOCK["sources"][app]:
+					raise RuntimeError("Bench clone revision mismatch for " + app)
+			metadata = tomllib.loads((source / "pyproject.toml").read_text())
+			for dependency, bounds in (
+				metadata.get("tool", {}).get("bench", {}).get("frappe-dependencies", {}).items()
+			):
+				if frappe.get_attr(dependency + ".__version__") not in SpecifierSet(bounds):
+					raise RuntimeError("Incompatible %s dependency: %s" % (app, dependency))
+		if frappe.get_hooks("required_apps", app_name="za_local_payroll") != [
+			"erpnext",
+			"hrms",
+			"za_local_core",
+		]:
+			raise RuntimeError("Payroll dependency metadata changed; review the locked install order")
+		tiles = frappe.get_hooks("add_to_apps_screen", app_name="za_local_core") or []
+		if not any(tile.get("name") == "za_local_core" for tile in tiles if isinstance(tile, dict)):
+			raise RuntimeError("ZA Localisation Apps-screen tile is missing")
+		if not frappe.db.exists("Dock", "za_local_payroll"):
+			raise RuntimeError("Payroll navigation Dock is missing from ZA Localisation")
+		result["payroll_desk_navigation"] = True
+		if (
+			importlib.metadata.version("reportlab")
+			!= json.loads(Path("/runtime/runtime.lock.json").read_text())["python_packages"]["reportlab"]
+		):
+			raise RuntimeError("Locked reportlab dependency is missing")
 		if not frappe.db.exists("Module Def", {"name": "WhatsApp Marketing", "app_name": "tag_marketing"}):
 			raise RuntimeError("Marketing module was not registered correctly")
 		if frappe.get_hooks("required_apps", app_name="tag_marketing") != ["erpnext"]:

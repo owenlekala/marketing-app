@@ -10,7 +10,18 @@
   },
   "sources": {
     "frappe": "e8d41dd0061a32ee781caefe5d0b0d2bb7c15362",
-    "erpnext": "ade850bbd6a7412e9994a9637d2c5c713771632a"
+    "erpnext": "ade850bbd6a7412e9994a9637d2c5c713771632a",
+    "hrms": "5c72c067c0a3bcc969a49c708b7bec545a046fe9",
+    "za_local_core": "a6128f1661c5ad9cda4eabff86168fe5bf9818b9",
+    "za_local_payroll": "dc958457b062a76a04014957dba3e4c1cc02fa19"
+  },
+  "source_branches": {
+    "hrms": "version-16",
+    "za_local_core": "main",
+    "za_local_payroll": "main"
+  },
+  "python_packages": {
+    "reportlab": "5.1.0"
   },
   "runtime": {"python": "3.14", "node_major": 24},
   "ports": {"web": 18080, "realtime": 19000}

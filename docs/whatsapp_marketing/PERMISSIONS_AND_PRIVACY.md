@@ -45,3 +45,12 @@ On approved erasure: redact content and permitted profile data, preserve necessa
 Document audit actions for credentials/readiness, consent, suppression, campaign approval/changes, publication, assignment, sending switches, exports, retention and unknown-result reconciliation. Append-only audit content excludes secrets and unnecessary message text.
 
 Verification: [WA-A03, WA-A04, WA-A09, WA-A14, WA-A17](TESTING_AND_ACCEPTANCE.md).
+
+
+## Foundation access and staged availability
+
+P1-001 ships read-only feature metadata and editable System Manager settings; it does not enable later feature commands. [Permission adapters](../../tag_marketing/infrastructure/permissions.py) apply configured-company boundaries and native Company User Permissions to lists and direct IDs. Inbox reads additionally require Marketing Manager or assignment/team-authorised WhatsApp Agent access; read cursors remain user-specific. System Manager alone receives connection/settings and technical diagnostics, not contact or inbox content. Analysts receive no raw-record DocPerms; their aggregate interfaces belong to P7. Raw webhook payloads have no business-role field grant.
+
+Source-bearing contact/campaign/snapshot/recipient/import-row projections and operation results stay unreadable through generic record access until their owning feature tasks implement source/target reauthorisation. Operation progress queries belong to P1-003. Agent contact summaries belong to P5; no full-address-book grant is added as a shortcut. This staged denial is an implementation gate, not a change to the final role policy above.
+
+Owned records cannot use DocShare: the [pinned framework](../../../frappe/frappe/model/db_query.py) can let a share override normal document and list permission denials. An owned DocShare validation hook rejects such grants, including privileged generic inserts; migration stops if unsupported existing shares are found rather than deleting administrator data silently. Assignment/team and company rules remain the supported access mechanism. Privileged direct SQL remains outside ordinary user authorisation.

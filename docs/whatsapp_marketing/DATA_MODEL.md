@@ -1,6 +1,6 @@
 # Data model and lifecycle contract
 
-Owner: WA-R01, WA-R04–WA-R14. Proposed application schema, not existing records. See [architecture](ARCHITECTURE.md), [API commands](API_CONTRACTS.md) and [permissions](PERMISSIONS_AND_PRIVACY.md).
+Owner: WA-R01, WA-R04–WA-R14. The schema foundation is implemented in WA-P1-001; feature services remain governed by their later tasks. See progress for executed qualification. See [architecture](ARCHITECTURE.md), [API commands](API_CONTRACTS.md) and [permissions](PERMISSIONS_AND_PRIVACY.md).
 
 ## Shared conventions
 
@@ -16,7 +16,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 
 ### WA Settings
 
-- `marketing_company` — **Link → Company**; required; one company per site; immutable after live business data exists.
+- `marketing_company` — **Link → Company**; required; one company per site; immutable while any company-owned records exist, including drafts, to avoid orphaning them.
 - `timezone` — **Data**; required IANA zone; initial Africa/Johannesburg.
 - `marketing_start` — **Time**; required; default 09:00.
 - `marketing_end` — **Time**; required; default 17:00; later than start.
@@ -31,10 +31,10 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `suppression_hmac_key` — **Password**; generated server-only immutable identity-digest secret; rotation requires migration.
 - `max_campaign_recipients` — **Int**; read-only 10000 for v1.
 - `company_rate_per_second` — **Float**; required positive configured value before live enablement.
-- `raw_event_retention_days` — **Int**; explicit positive policy value required.
-- `message_retention_days` — **Int**; explicit positive policy value required.
-- `media_retention_days` — **Int**; explicit positive policy value required.
-- `consent_retention_days` — **Int**; explicit positive policy value; enforce documented legal hold.
+- `raw_event_retention_days` — **Int**; explicit positive policy value required before sending enablement.
+- `message_retention_days` — **Int**; explicit positive policy value required before sending enablement.
+- `media_retention_days` — **Int**; explicit positive policy value required before sending enablement.
+- `consent_retention_days` — **Int**; explicit positive policy value before sending enablement; enforce documented legal hold.
 - `privacy_notice_url` — **Data**; required HTTPS URL before live enablement.
 - `retention_policy_reference` — **Small Text**; required policy owner/reference before enablement.
 - `enabled_source_types` — **Table → WA Source Type**; allowlist Lead, Customer, Contact, Sales Order.
@@ -649,3 +649,14 @@ Pausing/resuming, retry scheduling, counters, provider callbacks and stricter li
 ## Schema verification
 
 Use [WA-A01, WA-A04, WA-A06, WA-A07 and WA-A10](TESTING_AND_ACCEPTANCE.md). Test nullable unique IDs, composite constraints, source/company mismatches, immutable fields via REST, stale snapshots, rolling-cap races and repeated migrations on MariaDB 11.8 before considering other databases supported.
+
+
+## Foundation implementation boundary
+
+The [owned DocType metadata](../../tag_marketing/whatsapp_marketing/doctype) defines all 31 parent and five child records. It is the runtime source for fields and DocPerms. [Schema helpers](../../tag_marketing/infrastructure/schema.py) own compound keys/indexes; [installation](../../tag_marketing/setup/install.py) creates missing roles/defaults and the encrypted suppression key without resetting operator settings, existing roles or Custom DocPerms. Settings defaults are read from their DocType fields rather than copied into a second runtime configuration. The settings DocType sync hook seeds these safe values before Frappe initialises empty Single records. No marketing roles are assigned to users automatically.
+
+At P1-001, settings are the only editable business record. All other parent controllers delegate to [foundation services](../../tag_marketing/application/foundation.py), which run before_validate and reject generic create/update/delete even with ignore_permissions or ignore_validate; later feature tasks replace this closed gate with their complete action/state guards. No public mutation bypass flag exists. Trusted setup, settings auditing and synthetic SQL tests use explicit server persistence. Direct database access remains a privileged framework capability, not a public API.
+
+Disabled settings can be saved with retention/rates/privacy setup incomplete; zero/missing values mean unconfigured, never an approved policy. Negative/non-finite values are rejected. Sending enablement is rejected until the relevant feature readiness services exist, and Live scope additionally needs service-managed pilot evidence. The generated HMAC secret cannot be replaced or cleared by a settings save. If a previously configured key is missing or cannot be decrypted, migration stops for recovery rather than generating a replacement. Pilot contacts and source types are bounded, unique and company/allowlist checked. Settings changes append an audit event containing changed field names, without credentials or policy contents.
+
+The [pinned MariaDB add_unique adapter](../../../frappe/frappe/database/mariadb/mysqlclient.py) checks information_schema without database scoping and does not quote reserved field identifiers. The owned unique-key adapter therefore uses database-local SHOW INDEX and quoted manifest identifiers. It creates only missing owned keys and fails on conflicting data; it never deletes duplicates to force a migration through. These constraints are qualified on MariaDB 11.8 only. Optional unique provider identifiers are nullable without empty-string defaults; future provider services must persist unknown identifiers as NULL.

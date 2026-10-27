@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { test as base, expect, type APIRequestContext } from "@playwright/test";
+import { test as base, expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export type Identity = { username: string; password: string };
 type Accounts = { agent: Identity; manager: Identity };
@@ -75,3 +75,21 @@ export const test = base.extend<{ accounts: Accounts }>({
 });
 
 export { expect };
+
+
+export async function login(page: Page, identity: Identity, theme: "light" | "dark") {
+  await page.goto("/login");
+  await page.locator("#login_email").fill(identity.username);
+  await page.locator("#login_password").fill(identity.password);
+  await page.locator("#login_password").press("Enter");
+  await expect(page).toHaveURL(/\/(app|desk)(\/|$)/, { timeout: 30_000 });
+  await page.waitForFunction(() => Boolean(
+    (window as any).frappe?.app?.sidebar &&
+    typeof (window as any).frappe?.ui?.set_theme === "function"
+  ));
+  await page.evaluate(theme => {
+    document.documentElement.setAttribute("data-theme-mode", theme);
+    (window as any).frappe.ui.set_theme(theme);
+  }, theme);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+}

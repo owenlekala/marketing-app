@@ -38,6 +38,12 @@ Each browser run persists a mode-0600 `browser-run.json` recovery manifest befor
 
 The Python guard is process-local, not a firewall. Automated app tests must use these bases and fakes. Run synchronous worker logic under the guard; future subprocess/worker tests must install a guard in that process or isolate network at container level. Do not send work to unguarded live workers to qualify provider behaviour. Browser containers additionally have no external Docker route. Installation, browser-driver control and database/cache traffic are infrastructure boundaries, not provider traffic.
 
+### Schema foundation qualification (WA-P1-001)
+
+Run `python3 development/whatsapp_marketing/qualify_foundation.py` from the app root after the owned runtime is available. The [qualification controller](../../development/whatsapp_marketing/qualify_foundation.py) uses only the bootstrap service's existing secret mounts, refuses an existing qualification site, creates `wa-foundation-qualification.localhost`, installs only ERPNext and TAG Marketing, checks all 36 records/declared indexes, customises one setting/role, migrates twice and verifies preservation of those values and the encrypted HMAC identity. It drops only its newly created site in finally; no production or main disposable site is reset. Captured subprocess output is suppressed on failure because it may contain credentials. If site creation itself fails, inspect any partial qualification site before rerunning; never remove an unrelated site to bypass the refusal.
+
+The [foundation integration suite](../../tag_marketing/tests/test_foundation.py) checks every documented parent field/type/link, exact database indexes, all compound unique keys, optional provider IDs, a real two-connection uniqueness race, generic write/share bypasses, company restrictions, inbox assignment/team/cursors, settings forgery, secret preservation and role isolation. Fixtures use synthetic trusted SQL solely to test boundaries before feature services exist. Normal feature tests must use their actual commands once implemented. Retained settings policy tests run without Frappe under the offline unit base.
+
 ## Acceptance scenarios
 
 ### WA-A01 — Foundation and migrations

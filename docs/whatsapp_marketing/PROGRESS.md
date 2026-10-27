@@ -1,6 +1,6 @@
 # Progress and evidence
 
-Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-004 verified; WA-P1-001 is next**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-004 verified; WA-P1-001 in progress**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
@@ -160,7 +160,7 @@ The standard multi-browser image download was too slow to qualify the harness pr
 
 The environment blocker recorded above was resolved after the user requested HRMS, ZA Core and SA Payroll in the Desk. The three apps are now installed from pinned sources; runtime checks confirm their imports, dependency bounds, Desk tile/Dock records and assets. The earlier note is retained as history, not current runtime state.
 
-This runtime installation does not close WA-P0-004. The full `quality.py all` command has not been rerun after adding HRMS and the localisation apps, so the task remains unchecked and its combined suite is still unqualified. Run that command from the app root before starting WA-P1-001 and record its current result.
+Runtime expansion and additional-app business qualification are separate from the final WhatsApp harness gate recorded below. The later combined-gate evidence supersedes the earlier pending verification status.
 
 ### Payroll runtime installation evidence
 
@@ -184,3 +184,15 @@ Verified on 27 October 2026; implementation commit `eb3d9df`. This follow-up clo
 - Browser cases passed for both synthetic users in desktop light/dark, tablet and mobile; eight fresh screenshots are under `development/whatsapp_marketing/.local/test-results/browser/*/native-desk.png`. Inspected dark desktop and mobile screenshots: native Desk shell remains intact. These images qualify the harness baseline only; marketing navigation and screens are later tasks.
 - Successful cleanup removed both private recovery files. The final read-only database check found no harness users or rollback Role. Added an ignore entry for Bench's generated public node_modules symlink; no generated assets or credentials are versioned.
 - `quality.py docs` and `git diff --check` are rerun after recording this evidence. Production remains unqualified and live sending disabled. Next dependency-ready task: **WA-P1-001**, the complete documented schema, role matrix, settings guards and idempotent constraints; its checkbox remains unchecked.
+
+
+## WA-P1-001 — Owned schema, roles and settings guards
+
+Status: **In progress** on 27 October 2026. Scope: WA-A01 schema/install/migration and the foundation company/role portions of WA-A03. Source selection, feature workflows and production qualification remain later tasks. No navigation task has begun.
+
+- Added all 31 documented parent DocTypes and five child DocTypes as native metadata, thin lifecycle adapters, server-side settings policy, company/assignment read restrictions and idempotent setup. Feature writes remain closed; [foundation boundaries](DATA_MODEL.md#foundation-implementation-boundary) and [staged permissions](PERMISSIONS_AND_PRIVACY.md#foundation-access-and-staged-availability) own the current availability rules.
+- Single-field unique indexes are native metadata; compound constraints/indexes have one owned manifest. Corrected reserved identifier quoting after the first migration failed on row_number. Main-site migration subsequently passed. A concurrent dashboard write in another installed app caused a separate migration deadlock; pausing and restoring only the owned workers/scheduler allowed it to complete without modifying sibling code.
+- Reviewed the pinned unique-key helper and found its lookup is not database-scoped. Added the local SHOW INDEX adapter and verified a missing unique key with a reserved field on a connection-local temporary table. Fresh qualification now explicitly checks every declared compound index on its own database.
+- Focused checks passed: eight offline pure tests, 25 real Frappe integration tests, and mypy across 110 sources. Integration checks include every documented parent field, every compound/scalar unique constraint, nullable provider IDs, a real two-connection race, company and team restrictions, generic/bulk/ignore_validate write denial, sharing denial, settings auditing/forgery and preservation of custom settings/roles/encryption identity.
+- Real-browser qualification passed 16 cases (native settings access/hidden credential checks and ordinary-agent API denial alongside the Desk checks) plus all three network probes. A broad checkbox locator initially matched a native display control as well as the actual input; corrected its target. Additional screenshots of the lower privacy section are being collected in the final gate.
+- Preliminary fresh ERPNext/TAG install and two migrations passed before tightening the local-index checks. Later fresh runs exposed an installation PermissionError and disposed only their own temporary sites; investigating before completing this task. No failed run is treated as qualification. The task checkbox remains unchecked until fresh installation and the final combined gate pass.
