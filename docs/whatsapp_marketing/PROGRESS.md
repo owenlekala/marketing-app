@@ -1,13 +1,13 @@
 # Progress and evidence
 
-Last baseline review: 27 October 2026. Implementation: **WA-P0-001 and WA-P0-002 verified; WA-P0-003 in progress**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-003 verified; application scaffold installed**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
 - Frappe source: 16.53.0, `e8d41dd006`; ERPNext: 16.52.1, `ade850bbd6`.
 - Local manifests require Python 3.14 and Node >=24.
 - Local native navigation/theme/DocType examples were inspected; see [references](REFERENCES.md).
-- Current task evidence below qualifies the disposable framework/site runtime. The app scaffold is being installed in WA-P0-003; visual parity, business features and provider callbacks remain unimplemented/unqualified.
+- Current task evidence below qualifies the disposable framework/site runtime. The app scaffold is installed and verified in WA-P0-003; visual parity, business features and provider callbacks remain unimplemented/unqualified.
 - The canonical handbook and runtime now live inside the standalone `tag_marketing` Git repository; see WA-P0-003 evidence below.
 
 ## Completion ownership
@@ -46,7 +46,7 @@ Append one entry per task: task ID; status (Not started/In progress/Blocked/Veri
 
 ## Known implementation prerequisites
 
-- Finish WA-P0-003 verification before starting the WA-P0-004 test harness.
+- Next: WA-P0-004 configures the test harness and deterministic adapters before feature implementation.
 - Verify current official Meta API version/permissions/payloads; some developer pages were rate-limited during planning.
 - Obtain business-owned credentials, approved templates and explicitly authorised test recipients during the relevant task.
 - Configure retention policy, rate controls and operational ownership before live enablement.
@@ -108,7 +108,7 @@ Status: **Verified** on 27 October 2026. All runtime checks below passed; only t
 
 ## WA-P0-003 — Application repository and instruction bridge
 
-Status: **In progress** on 27 October 2026. Initial scaffold commit is recorded after creation; installation, repeated migrations and runtime verification must pass before this task is closed.
+Status: **Verified** on 27 October 2026. Initial application commit: `971e7b5966a975e97ac1007a94db578e921126cb` on local branch `main`. That commit intentionally records verification as in progress; this subsequent evidence update closes the task after execution.
 
 - Generated the app using the pinned runtime's `bench new-app --no-git tag_marketing`, with title TAG Marketing, publisher TAG Projects, MIT license and no generated GitHub workflow. The contact email uses the configured local Git identity. Exported the scaffold with `docker cp`; verified every exported file by SHA-256 before replacing only the generated volume copy with a link to `/source/tag_marketing`.
 - Initialised the independent repository with `git -C tag_marketing init -b main`. No remote or push was created. Declared Python `>=3.14,<3.15`, Frappe `>=16.53.0,<17.0.0` and ERPNext `>=16.52.1,<17.0.0` through supported Bench dependency metadata. `required_apps` declares ERPNext; no payroll/HRMS dependencies or framework changes.
@@ -119,4 +119,14 @@ Status: **In progress** on 27 October 2026. Initial scaffold commit is recorded 
 - The first post-move start exposed an existing database container still referencing the previous secret-file path. Recreated only that owned container with `compose up -d --force-recreate --wait mariadb`, retaining its data volume and unchanged credentials; health checks passed. No volume deletion or site reset occurred.
 - Preliminary verification: runtime script syntax, bridge/pointer links, private-directory/file modes and Compose configuration pass. The canonical structural check passes 48 documents, 649 relative references, 48 local sources, 32 tasks, 18 requirements and 18 acceptance scenarios, with zero duplicate files/paragraphs, missing dependencies or link errors.
 
-Pending: installed scaffold/module inspection, two migrations, post-move runtime and credential-isolation checks, initial commit and final documentation validation. Next task remains WA-P0-004 after these pass.
+### Final verification and handoff
+
+- From the parent workspace, `python3 tag_marketing/development/whatsapp_marketing/runtime.py up` exited 0: editable package refresh, installation on the retained site, two migrations, complete asset build, scheduler enablement and service startup succeeded. Future runs use the repository-root commands in the setup guide. `bench get-app --help` confirms this pinned Bench supports the fresh-runtime `--soft-link` registration path.
+- `docker exec tag-wa-dev-web-1 bench --site wa-marketing.localhost install-app tag_marketing` exited 0 with ERPNext and TAG Marketing already installed. Module inspection confirms the owned `WhatsApp Marketing` Module Def belongs to `tag_marketing`; Bench resolves the app to `/source/tag_marketing`. No default `Tag Marketing` module was installed.
+- `python3 tag_marketing/development/whatsapp_marketing/runtime.py verify` exited 0: Python 3.14.8; installed apps Frappe, ERPNext and TAG Marketing; database 11.8.9; dependency bounds, module registration and credential isolation true; database/Redis, web/assets, realtime, marketing queue and actual scheduled execution probes all passed. RQ reported three registrations during restart recovery; the project runs its two intended worker containers and the dedicated queue consumed the probe successfully.
+- Inspected mount metadata for web, realtime, scheduler and both workers: each uses the single writable app source, read-only framework source mounts and the host-credential mask, with no `/run/secrets` mounts. Existing `tag-wa-dev_bench-data`, `tag-wa-dev_db-data` and `tag-wa-dev_queue-data` remain owned by the same project. The web verifier confirms host credentials are inaccessible.
+- Parsed compatibility bounds with the runtime's `tomllib`/`packaging`: Python 3.14 accepted, 3.13 and 3.15 rejected; below-minimum framework/app versions and v17 rejected. Both Bench framework working trees and all four host source repositories remain clean. No remote is configured for the new repository.
+- Staged-content verification reads generated credentials locally and checks they occur in no staged blob, without printing them. No `.local`, Python cache or credential files are tracked. Removed the redundant runtime `.gitignore`; the repository-level ignore file owns those rules.
+- Final canonical structural validation passes with zero link/dependency/duplicate errors. Instruction and old-location pointer links resolve; both old locations contain only their README pointer. Exactly the first three P0 task definitions are complete. Acceptance scope: WA-A01 scaffold installation/repeated migrations and WA-A18 instruction/versioned-documentation governance; app-specific permission, UI and business acceptance remain later work.
+- A concurrent local copyright edit to `license.txt` appeared during verification. Preserved it without staging it into the task evidence commit.
+- No new marketing UI is introduced in this task, so visual comparison belongs to P1. No live-provider traffic, production deployment, remote repository or payroll/framework modifications occurred. Next task: **WA-P0-004**, supported tests, deterministic provider/clock boundaries and browser harness. Production qualification remains outstanding.

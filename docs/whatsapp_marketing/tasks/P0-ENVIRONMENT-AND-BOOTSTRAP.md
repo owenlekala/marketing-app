@@ -36,7 +36,7 @@
 
 ## WA-P0-003
 
-- [ ] **Create application repository and scoped instruction bridge**
+- [x] **Create application repository and scoped instruction bridge**
 
 **Depends on:** `WA-P0-002`
 

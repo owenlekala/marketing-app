@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 import sys
 import time
+import tomllib
 import urllib.request
 import uuid
 
@@ -21,6 +22,7 @@ def get(url):
 
 def main():
     import frappe
+    from packaging.specifiers import SpecifierSet
     from frappe.utils.background_jobs import get_redis_conn
     from frappe.utils.doctor import get_workers
     from frappe.utils.scheduler import is_scheduler_inactive, is_schduler_process_running
@@ -36,6 +38,22 @@ def main():
         result["redis_queue"] = bool(get_redis_conn().ping())
         if not {"frappe", "erpnext", "tag_marketing"}.issubset(result["apps"]):
             raise RuntimeError("Required site apps are missing")
+        source = Path("/source/tag_marketing")
+        if (BENCH / "apps/tag_marketing").resolve() != source:
+            raise RuntimeError("Bench is not using the canonical marketing source")
+        metadata = tomllib.loads((source / "pyproject.toml").read_text())
+        for app, bounds in metadata["tool"]["bench"]["frappe-dependencies"].items():
+            if frappe.get_attr(app + ".__version__") not in SpecifierSet(bounds):
+                raise RuntimeError("Incompatible required application: " + app)
+        if not frappe.db.exists("Module Def", {"name": "WhatsApp Marketing", "app_name": "tag_marketing"}):
+            raise RuntimeError("Marketing module was not registered correctly")
+        if frappe.get_hooks("required_apps", app_name="tag_marketing") != ["erpnext"]:
+            raise RuntimeError("Unexpected marketing app dependencies")
+        result["marketing_scaffold"] = True
+        private = source / "development/whatsapp_marketing/.local"
+        if os.access(private, os.R_OK) or Path("/run/secrets/db_root").exists() or Path("/run/secrets/site_admin").exists():
+            raise RuntimeError("Ordinary web service can access host credentials")
+        result["credential_isolation"] = True
         for _ in range(30):
             try:
                 status, body = get("http://web:8000/api/method/ping")
