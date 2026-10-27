@@ -1,0 +1,117 @@
+x-bench: &bench
+  image: ${BENCH_IMAGE:?Use runtime.py to load the image lock}
+  platform: linux/amd64
+  init: true
+  entrypoint: []
+  working_dir: /home/frappe/dev/frappe-bench
+  volumes:
+    - &bench-volume
+      type: volume
+      source: bench-data
+      target: /home/frappe/dev
+      volume:
+        nocopy: true
+    - ../../../frappe:/source/frappe:ro
+    - ../../../erpnext:/source/erpnext:ro
+    - ../..:/source/tag_marketing
+    - ./runtime.lock.json:/runtime/runtime.lock.json:ro
+    - ./bootstrap.py:/runtime/bootstrap.py:ro
+    - ./verify.py:/runtime/verify.py:ro
+  # Hide host-only credentials underneath the live application bind mount.
+  tmpfs:
+    - /source/tag_marketing/development/whatsapp_marketing/.local:ro,noexec,nosuid,size=64k,mode=000
+  environment:
+    PYTHONUNBUFFERED: "1"
+  restart: "no"
+
+services:
+  mariadb:
+    image: ${MARIADB_IMAGE:?Use runtime.py to load the image lock}
+    platform: linux/amd64
+    environment:
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root
+      MARIADB_ROOT_HOST: "%"
+    secrets: [db_root]
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 30s
+
+  redis-cache:
+    image: ${REDIS_IMAGE:?Use runtime.py to load the image lock}
+    platform: linux/amd64
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis-queue:
+    image: ${REDIS_IMAGE:?Use runtime.py to load the image lock}
+    platform: linux/amd64
+    command: [redis-server, --appendonly, "yes"]
+    volumes:
+      - queue-data:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  volume-init:
+    image: ${BENCH_IMAGE:?Use runtime.py to load the image lock}
+    platform: linux/amd64
+    user: root
+    entrypoint: [/bin/sh, -c]
+    command: ['mkdir -p /home/frappe/dev && chown "$$(id -u frappe):$$(id -g frappe)" /home/frappe/dev && stat -c "%u %g %a %n" /home/frappe/dev']
+    volumes:
+      - *bench-volume
+
+  bootstrap:
+    <<: *bench
+    working_dir: /home/frappe/dev
+    command: [python, /runtime/bootstrap.py]
+    secrets: [db_root, site_admin]
+    depends_on:
+      mariadb: {condition: service_healthy}
+      redis-cache: {condition: service_healthy}
+      redis-queue: {condition: service_healthy}
+
+  web:
+    <<: *bench
+    command: [bench, serve, --port, "8000", --noreload]
+    ports: ["127.0.0.1:${WEB_PORT:?Use runtime.py}:8000"]
+
+  realtime:
+    <<: *bench
+    command: [env/bin/python, -m, frappe.realtime.server]
+    ports: ["127.0.0.1:${REALTIME_PORT:?Use runtime.py}:${REALTIME_PORT:?Use runtime.py}"]
+
+  scheduler:
+    <<: *bench
+    command: [bench, schedule]
+
+  worker:
+    <<: *bench
+    command: [bench, worker, --queue, "short,default,long"]
+
+  marketing-worker:
+    <<: *bench
+    command: [bench, worker, --queue, marketing]
+
+secrets:
+  db_root: {file: .local/secrets/db_root}
+  site_admin: {file: .local/secrets/site_admin}
+
+volumes:
+  bench-data:
+  db-data:
+  queue-data:

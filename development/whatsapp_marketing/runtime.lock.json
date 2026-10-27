@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "project": "tag-wa-dev",
+  "site": "wa-marketing.localhost",
+  "platform": "linux/amd64",
+  "images": {
+    "BENCH_IMAGE": "frappe/bench@sha256:9b83f0807374727544c94bd619e518a35189b6334683f2f29d544cb2499b8e78",
+    "MARIADB_IMAGE": "mariadb@sha256:d689f65e09e887e96db5c40ca3957dd9f4e3fad3516baec96d7726c78a5fc2ee",
+    "REDIS_IMAGE": "redis@sha256:3e0669e42d4fe421c9dea0ba5fbc04d336b80b4f32a6c7d25bee3a1d089288a1"
+  },
+  "sources": {
+    "frappe": "e8d41dd0061a32ee781caefe5d0b0d2bb7c15362",
+    "erpnext": "ade850bbd6a7412e9994a9637d2c5c713771632a"
+  },
+  "runtime": {"python": "3.14", "node_major": 24},
+  "ports": {"web": 18080, "realtime": 19000}
+}
