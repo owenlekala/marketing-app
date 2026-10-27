@@ -73,6 +73,7 @@ import hashlib, json, frappe
 from frappe.utils.password import get_decrypted_password
 from tag_marketing.infrastructure.schema import UNIQUE_KEYS, INDEXES, constraint_name
 from tag_marketing.setup.navigation import owned_documents, check_navigation_ownership
+from tag_marketing.tests.support.navigation import create_customizations
 frappe.init(site=%r, sites_path='.')
 frappe.connect()
 try:
@@ -93,7 +94,14 @@ finally:
 """
 			% SITE
 		)
-		seed = "frappe.db.set_single_value('WA Settings','marketing_cap',3); frappe.db.set_value('Role','Marketing Analyst','desk_access',0); frappe.db.commit(); print(json.dumps({'key_digest':digest}))"
+		seed = """
+frappe.db.set_single_value('WA Settings','marketing_cap',3)
+frappe.db.set_value('Role','Marketing Analyst','desk_access',0)
+customizations = create_customizations()
+navigation = [json.loads(frappe.as_json(frappe.get_doc(doc.doctype,doc.name).as_dict())) for doc in customizations]
+frappe.db.commit()
+print(json.dumps({'key_digest':digest,'navigation':navigation}))
+"""
 		result = subprocess.run(
 			[str(BENCH / "env/bin/python"), "-c", inspect % seed],
 			cwd=BENCH / "sites",
@@ -105,10 +113,17 @@ finally:
 		before = json.loads(result.stdout)
 		for iteration in range(2):
 			run("migration %s/2" % (iteration + 1), "--site", SITE, "migrate")
-		verify = (
-			"assert frappe.db.get_single_value('WA Settings','marketing_cap')==3; assert frappe.db.get_value('Role','Marketing Analyst','desk_access')==0; assert digest==%r; print('PASS: settings, role customisation and encrypted key preserved')"
-			% before["key_digest"]
-		)
+		verify = """
+assert frappe.db.get_single_value('WA Settings','marketing_cap')==3
+assert frappe.db.get_value('Role','Marketing Analyst','desk_access')==0
+assert digest==%r
+for original in %r:
+ assert json.loads(frappe.as_json(frappe.get_doc(original['doctype'],original['name']).as_dict())) == original
+from frappe.desk.doctype.sidebar.sidebar import resolve_sidebar
+frappe.clear_cache()
+assert resolve_sidebar('WhatsApp Marketing','Administrator').label == 'Synthetic Personal Sidebar'
+print('PASS: settings, role, encrypted key and site/personal navigation preserved')
+""" % (before["key_digest"], before["navigation"])
 		result = subprocess.run(
 			[str(BENCH / "env/bin/python"), "-c", inspect % verify],
 			cwd=BENCH / "sites",

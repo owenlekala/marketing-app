@@ -1,17 +1,26 @@
 """Stable application error codes and optimistic revision checks, independent of Frappe."""
 
-HTTP_STATUS = {
-	"INVALID_INPUT": 400, "INVALID_FILTER": 400, "NOT_FOUND": 404,
-	"SOURCE_ACCESS_DENIED": 403, "COMPANY_MISMATCH": 403,
-	"STALE_DOCUMENT": 409, "IDEMPOTENCY_CONFLICT": 409, "INVALID_STATE": 409,
-	"READINESS_FAILED": 422, "LOCAL_RATE_LIMIT": 429,
-	"PROVIDER_UNAVAILABLE": 502, "PERSISTENCE_UNAVAILABLE": 503,
-}
+ERROR_CODES = frozenset(
+	{
+		"INVALID_INPUT",
+		"INVALID_FILTER",
+		"NOT_FOUND",
+		"SOURCE_ACCESS_DENIED",
+		"COMPANY_MISMATCH",
+		"STALE_DOCUMENT",
+		"IDEMPOTENCY_CONFLICT",
+		"INVALID_STATE",
+		"READINESS_FAILED",
+		"LOCAL_RATE_LIMIT",
+		"PROVIDER_UNAVAILABLE",
+		"PERSISTENCE_UNAVAILABLE",
+	}
+)
 
 
 class CommandError(Exception):
 	def __init__(self, code: str, field: str | None = None) -> None:
-		if code not in HTTP_STATUS:
+		if code not in ERROR_CODES:
 			raise ValueError("Unregistered application error code")
 		self.code = code
 		self.field = field

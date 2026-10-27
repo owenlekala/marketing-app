@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { test as base, expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export type Identity = { username: string; password: string };
-type Accounts = Record<"agent" | "manager" | "marketing" | "marketing_manager" | "analyst" | "inbox", Identity> & { operations: Record<"Pending" | "Running" | "Succeeded" | "Failed" | "Cancelled", string> };
+type Accounts = Record<"parity" | "agent" | "manager" | "marketing" | "marketing_manager" | "analyst" | "inbox", Identity> & { connection: string; operations: Record<"Pending" | "Running" | "Succeeded" | "Failed" | "Cancelled", string> };
 import { allowed, baseURL, pageRealtime, realtime } from "./target";
 
 

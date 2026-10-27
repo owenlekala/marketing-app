@@ -167,48 +167,9 @@ class TestNavigation(AppIntegrationTestCase):
 		from frappe.modules.import_file import import_file_by_path
 
 		from tag_marketing.setup.navigation import APP_ROOT
+		from tag_marketing.tests.support.navigation import create_customizations
 
-		customizations = []
-		for user, label in (("", "Site"), ("Administrator", "Personal")):
-			customizations.append(
-				frappe.get_doc(
-					{
-						"doctype": "Custom Sidebar",
-						"module": "WhatsApp Marketing",
-						"user": user,
-						"label": "Synthetic " + label + " Sidebar",
-						"sidebar_items": [],
-					}
-				).insert()
-			)
-			customizations.append(
-				frappe.get_doc(
-					{
-						"doctype": "Dock",
-						"app": "tag_marketing",
-						"standard": 0,
-						"user": user,
-						"items": [
-							{
-								"link_type": "Sidebar",
-								"link_to": "WhatsApp Marketing",
-								"title": "Synthetic " + label + " Dock",
-								"icon": "users",
-							}
-						],
-					}
-				).insert()
-			)
-		customizations.append(
-			frappe.get_doc(
-				{
-					"doctype": "Custom Workspace",
-					"workspace": "WhatsApp Marketing",
-					"icon": "users",
-					"visibility": "Inherit",
-				}
-			).insert()
-		)
+		customizations = create_customizations()
 		before = [frappe.get_doc(doc.doctype, doc.name).as_dict() for doc in customizations]
 		for _ in range(2):
 			check_navigation_ownership()

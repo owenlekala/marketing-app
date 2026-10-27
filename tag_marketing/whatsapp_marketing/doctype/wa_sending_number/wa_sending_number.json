@@ -90,7 +90,7 @@
    "fieldname": "rate_per_second",
    "fieldtype": "Float",
    "label": "Rate Per Second",
-   "read_only": 1
+   "read_only": 0
   },
   {
    "fieldname": "last_sync_at",
@@ -102,7 +102,7 @@
    "fieldname": "default_team",
    "fieldtype": "Link",
    "label": "Default Team",
-   "read_only": 1,
+   "read_only": 0,
    "options": "User Group"
   }
  ],
@@ -110,7 +110,8 @@
   {
    "role": "System Manager",
    "read": 1,
-   "write": 0
+   "write": 1,
+   "create": 0
   },
   {
    "role": "Marketing User",
@@ -126,6 +127,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 0,
- "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified.",
+ "description": "Provider identity is synced by connection services; administrators configure local throughput and assignment.",
  "title_field": "display_name"
 }

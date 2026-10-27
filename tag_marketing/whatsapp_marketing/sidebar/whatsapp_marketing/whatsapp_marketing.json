@@ -196,8 +196,8 @@
   {
    "type": "Link",
    "label": "Connections",
-   "link_type": "DocType",
-   "link_to": "WA Connection",
+   "link_type": "Page",
+   "link_to": "wa-connections",
    "is_default_module": 1,
    "child": 1,
    "indent": 0

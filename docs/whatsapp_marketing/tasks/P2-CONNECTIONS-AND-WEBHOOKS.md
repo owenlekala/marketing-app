@@ -4,7 +4,7 @@
 
 ## WA-P2-001
 
-- [ ] **Verify official Meta contract and implement adapter**
+- [x] **Verify official Meta contract and implement adapter**
 
 **Depends on:** `WA-P1-004`
 
@@ -18,6 +18,8 @@
 
 **Completion evidence:** Record source references, adapter contract tests, selected version and fixture redaction review.
 
+**Completion evidence (27 October 2026):** Reviewed Meta's maintained Cloud API Postman collection and the current Graph API version reference; `v26.0` is explicitly pinned and no fallback or unversioned endpoint is allowed. The canonical developer changelog returned HTTP 429 during direct retrieval, so [References](../REFERENCES.md#official-messaging-and-privacy-references) records that release-time revalidation is still required. Added a clean-architecture provider adapter with bounded HTTPS transport, typed number/template/message/media results, and fail-closed handling for unsupported version, wrong WABA, expired credentials, throttling, rejection, 5xx and ambiguous submission. Tests use synthetic responses and verify provider bodies and tokens do not escape diagnostics. No live credentials or outbound provider calls were used; runtime permission and delivery qualification remain pending P2-002/P2-003.
+
 ## WA-P2-002
 
 - [ ] **Implement protected connection and number setup**
@@ -30,7 +32,7 @@
 
 **Implementation and boundaries:** Implement connection forms, protected credential storage, validation/sync operations, number identity/rate/team configuration, diagnostics and disable/reconnect. Use persisted WA Operation results. Build explicit test command input validation; provider dispatch uses the shared outbox once P4 is ready, so no direct success-only test sender is introduced.
 
-**Failure cases and verification:** Test secret rotation/readiness invalidation, safe diagnostics, stale commands, duplicate sync and unauthorised credential access. Keep live sending disabled.
+**Failure cases and verification:** Test secret rotation/readiness invalidation, safe diagnostics, stale commands, duplicate sync and unauthorised credential access. Qualify operation-specific target/result permissions before enabling producers, including permitted Manager template-sync progress without granting credential or generic technical-record access. Recheck revocation and private result-file access through the [progress contract](../API_CONTRACTS.md#operation-progress-foundation). Keep live sending disabled.
 
 **Completion evidence:** Run fake-provider integration checks and connection UI evidence; record that actual outbound test readiness depends on the complete P3/P4 eligibility/outbox slice.
 

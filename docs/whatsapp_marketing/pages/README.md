@@ -3,7 +3,7 @@
 Owner: WA-R02. Build one native Sidebar named **WhatsApp Marketing** in the owned TAG Marketing Dock/app. Resolve routes through the installed framework; names below identify documents/destinations, not hardcoded legacy URLs.
 
 - **Overview** — [Overview](OVERVIEW.md). Native Workspace named WhatsApp Marketing; home destination in the owned Sidebar.
-- **Connections** — [Connections](CONNECTIONS.md). Native WA Connection List/Form with linked WA Sending Number records; no custom dashboard application.
+- **Connections** — [Connections](CONNECTIONS.md). Permission-safe native Desk Page links System Managers to the native WA Connection List/Form; Marketing Managers receive only the safe health summary and template-sync command.
 - **Contacts** — [Contacts and imports](CONTACTS_AND_IMPORTS.md). Native WA Contact List/Form; private CSV import handled through WA Import Batch form and native mapping/confirmation dialogs.
 - **Audience Segments** — [Audience segments](AUDIENCE_SEGMENTS.md). Native WA Audience Segment List/Form with native filter controls and paginated preview.
 - **Templates** — [Templates](TEMPLATES.md). Native WA Template List/Form with a scoped rendered message preview.

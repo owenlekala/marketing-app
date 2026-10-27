@@ -26,7 +26,6 @@ COMPANY = "_WA Foundation Company"
 OTHER = "_WA Other Company"
 
 
-
 class TestFoundation(AppIntegrationTestCase):
 	def setUp(self):
 		super().setUp()

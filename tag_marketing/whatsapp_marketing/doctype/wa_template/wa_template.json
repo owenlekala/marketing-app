@@ -68,7 +68,7 @@
    "fieldtype": "Select",
    "label": "Category",
    "read_only": 1,
-   "options": "Marketing\nUtility\nAuthentication",
+   "options": "Marketing\nUtility\nAuthentication\nUnknown",
    "default": "Marketing"
   },
   {
@@ -84,7 +84,7 @@
    "fieldtype": "Select",
    "label": "Status",
    "read_only": 1,
-   "options": "Draft\nPending\nApproved\nRejected\nPaused\nDisabled",
+   "options": "Draft\nPending\nApproved\nRejected\nPaused\nDisabled\nUnknown",
    "default": "Draft",
    "in_list_view": 1
   },
@@ -117,6 +117,11 @@
   },
   {
    "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "System Manager",
    "read": 1,
    "write": 0
   }

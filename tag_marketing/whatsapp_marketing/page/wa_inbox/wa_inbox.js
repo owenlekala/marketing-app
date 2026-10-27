@@ -5,14 +5,19 @@ frappe.pages["wa-inbox"].on_page_load = function (wrapper) {
  wrapper.refresh_marketing_inbox = async function () {
   if (loading) return;
   loading = true;
+  const retry_had_focus = body[0].contains(document.activeElement);
   tag_marketing.ui.render_state(body, { title: __("Loading..."), message: __("Checking Inbox availability."), loading: true });
   try {
    const state = await tag_marketing.ui.request("tag_marketing.api.navigation.inbox_readiness", {}, { button: page.btn_secondary });
    tag_marketing.ui.render_state(body, { title: __("Inbox unavailable"), message: state.reason });
   } catch (error) {
    tag_marketing.ui.render_state(body, { title: __("Unable to load Inbox"), message: error.message, action: { label: __("Retry"), run: wrapper.refresh_marketing_inbox } });
-  } finally { loading = false; }
+  } finally {
+   loading = false;
+   if (retry_had_focus && document.activeElement === document.body) page.btn_secondary?.trigger("focus");
+  }
  };
  page.set_secondary_action(__("Refresh"), wrapper.refresh_marketing_inbox, "refresh-cw");
+ page.btn_secondary.attr({ "aria-label": __("Refresh"), title: __("Refresh") });
 };
 frappe.pages["wa-inbox"].on_page_show = function (wrapper) { wrapper.refresh_marketing_inbox(); };

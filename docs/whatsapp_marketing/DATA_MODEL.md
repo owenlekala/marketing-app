@@ -200,14 +200,14 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `provider_template_id` — **Data**; set after provider creation.
 - `template_name` — **Data**; required provider-compatible name.
 - `language_code` — **Data**; required explicit provider locale.
-- `category` — **Select**; Marketing, Utility, Authentication; Authentication sync-only in v1.
+- `category` — **Select**; Marketing, Utility, Authentication, Unknown; unknown categories are retained but cannot be used for sending.
 - `components_json` — **JSON**; required validated header/body/footer/button schema.
 - `status` — **Select**; service-managed provider state.
 - `content_hash` — **Data**; required canonical content hash.
 - `provider_reason` — **Small Text**; redacted rejection/pause reason.
 - `last_sync_at` — **Datetime**; UTC.
 
-**Lifecycle:** Draft → Pending → Approved / Rejected; Approved → Paused / Disabled; provider states are authoritative.
+**Lifecycle:** Draft → Pending → Approved / Rejected; Approved → Paused / Disabled; unrecognized provider states are retained as Unknown and cannot be selected for sending. Provider states are authoritative.
 
 **Write ownership:** User edits only Draft/Rejected local drafts, then resubmits. Campaigns require Approved; edits/reclassification invalidate stale approval snapshots.
 

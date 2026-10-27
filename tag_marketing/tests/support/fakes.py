@@ -27,7 +27,16 @@ class FakeProvider:
 		self._outcomes = deque(outcomes)
 		self.calls: list[tuple[str, str, bytes, dict[str, str]]] = []
 
-	def request(self, method: str, url: str, *, body: bytes, headers: Mapping[str, str]) -> TransportResponse:
+	def request(
+		self,
+		method: str,
+		url: str,
+		*,
+		body: bytes,
+		headers: Mapping[str, str],
+		timeout_seconds: float = 15,
+		max_response_bytes: int = 8 * 1024 * 1024,
+	) -> TransportResponse:
 		self.calls.append((method, url, body, dict(headers)))
 		if not self._outcomes:
 			raise AssertionError("Unexpected provider request: no scripted outcome")

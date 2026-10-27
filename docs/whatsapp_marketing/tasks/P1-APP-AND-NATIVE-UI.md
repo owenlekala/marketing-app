@@ -36,7 +36,7 @@
 
 ## WA-P1-003
 
-- [ ] **Build native UI and error/progress foundations**
+- [x] **Build native UI and error/progress foundations**
 
 **Depends on:** `WA-P1-002`
 
@@ -52,7 +52,7 @@
 
 ## WA-P1-004
 
-- [ ] **Verify ERPNext parity and install behaviour**
+- [x] **Verify ERPNext parity and install behaviour**
 
 **Depends on:** `WA-P1-003`
 

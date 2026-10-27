@@ -19,6 +19,15 @@ class TransportResponse:
 
 
 class ProviderTransport(Protocol):
-	def request(self, method: str, url: str, *, body: bytes, headers: Mapping[str, str]) -> TransportResponse:
+	def request(
+		self,
+		method: str,
+		url: str,
+		*,
+		body: bytes,
+		headers: Mapping[str, str],
+		timeout_seconds: float = 15,
+		max_response_bytes: int = 8 * 1024 * 1024,
+	) -> TransportResponse:
 		"""Perform one HTTP attempt; provider interpretation belongs to its adapter."""
 		...

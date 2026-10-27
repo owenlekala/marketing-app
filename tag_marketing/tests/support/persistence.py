@@ -8,4 +8,3 @@ def raw(doctype, **values):
 	doc = frappe.get_doc({"doctype": doctype, "name": frappe.generate_hash(length=16), **values})
 	doc.db_insert()
 	return doc
-

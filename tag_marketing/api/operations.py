@@ -1,4 +1,5 @@
 """Authenticated operation progress. No create, retry, cancel or dispatch endpoint."""
+
 import frappe
 
 from tag_marketing.api.responses import boundary

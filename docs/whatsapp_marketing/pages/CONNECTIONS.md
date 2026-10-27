@@ -4,13 +4,14 @@ Page contract: **WA-UI-CONNECTIONS**. Sidebar label: **Connections**. [Navigatio
 
 ## Purpose and implementation
 
-Native WA Connection List/Form with linked WA Sending Number records; no custom dashboard application.
+The Connections sidebar destination is a small native Desk Page that shows a permission-safe health summary. System Managers open the native WA Connection List/Form from it; Marketing Managers never receive generic credential-record access. WA Sending Number and WA Template remain linked list/form records with their existing role permissions.
 
 **Users:** System Manager configures credentials; Marketing Manager may read safe health and synchronise templates; no other role sees secret fields.
 
 ## Layout and fields
 
-- List columns: connection name, company, status, last validation, last webhook and safe error code.
+- Summary columns: connection name, status, last validation, last webhook, number/template counts and safe error code. The summary API never returns credentials, app/WABA IDs, provider payloads, or generic technical diagnostics.
+- System Manager opens the standard Connection List/Form from the page. Native form tabs: Account (app/WABA IDs, explicit API version), Credentials (Password controls), Numbers, Webhook, Diagnostics.
 - Form tabs: Account (app/WABA IDs, explicit API version), Credentials (Password controls), Numbers, Webhook, Diagnostics.
 - Number details: provider ID, display name/phone, readiness, available quality/limits, configured local rate and default team.
 - Webhook panel: public integration URL, verification instructions, last valid POST timestamp; distinguish GET verification from actual event delivery.
@@ -21,7 +22,7 @@ Filters: status and last validation. Show credential-present indicators rather t
 
 ## Actions and prerequisites
 
-Validate Credentials, Sync Numbers, Sync Templates, Check Webhook, Send Test and Disable/Enable use the connection APIs. Test dialog selects a permitted contact/template, explains one outbound test and requires explicit action. Credential edits clear validation. Disable stops new sends without discarding callbacks.
+Validate Connection, Sync Numbers, Sync Templates, Reconnect and Disable use persisted `WA Operation` commands and native progress dialogs. Marketing Managers may sync templates from the safe summary page; they cannot open a connection document. Credential edits clear validation. Disable immediately blocks new sends without discarding authenticated callbacks. Reconnect requires fresh provider reads. Test-send input remains disabled until P4's shared outbox and dispatch policy are complete; validation never produces a success-only send.
 
 ## UI states, access and responsive behaviour
 

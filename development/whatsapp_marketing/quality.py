@@ -105,7 +105,7 @@ def egress():
 			credentials.unlink()
 
 
-def browser(project=None):
+def browser(project=None, test_grep=None):
 	credentials = PRIVATE / "browser-users.json"
 	if MANIFEST.exists() or credentials.exists():
 		raise RuntimeError(
@@ -131,7 +131,15 @@ def browser(project=None):
 			"npm",
 			"run",
 			"test:browser",
-			*(["--", "--project=" + project] if project else []),
+			*(
+				(
+					["--"]
+					+ (["--project=" + project] if project else [])
+					+ (["--grep=" + test_grep] if test_grep else [])
+				)
+				if (project or test_grep)
+				else []
+			),
 		)
 		print(
 			"Browser evidence: development/whatsapp_marketing/.local/test-results/browser/" + run_id,
@@ -150,10 +158,16 @@ def main():
 		choices=["setup", "cleanup", "egress", "docs", "lint", "unit", "integration", "browser", "all"],
 	)
 	parser.add_argument("--browser-project", choices=["desktop-light", "desktop-dark", "tablet", "mobile"])
+	parser.add_argument(
+		"--browser-grep",
+		help="Run matching Playwright cases while retaining fixture cleanup and egress guards",
+	)
 	args = parser.parse_args()
 	action = args.action
 	if args.browser_project and action != "browser":
 		parser.error("--browser-project is supported only with browser")
+	if args.browser_grep and (action != "browser" or not args.browser_grep.strip()):
+		parser.error("--browser-grep requires browser and a non-empty test expression")
 	PRIVATE.mkdir(parents=True, exist_ok=True, mode=0o700)
 	(PRIVATE / "test-results").mkdir(exist_ok=True)
 	if action == "egress":
@@ -209,7 +223,7 @@ def main():
 	if action in ("integration", "all"):
 		compose("exec", "-T", "web", "bench", "--site", LOCK["site"], "run-tests", "--app", "tag_marketing")
 	if action in ("browser", "all"):
-		browser(args.browser_project)
+		browser(args.browser_project, args.browser_grep)
 
 
 if __name__ == "__main__":

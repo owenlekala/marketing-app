@@ -1,0 +1,12 @@
+{
+ "doctype": "Page",
+ "name": "wa-connections",
+ "page_name": "wa-connections",
+ "title": "Connections",
+ "module": "WhatsApp Marketing",
+ "standard": "Yes",
+ "roles": [
+  {"role": "Marketing Manager"},
+  {"role": "System Manager"}
+ ]
+}

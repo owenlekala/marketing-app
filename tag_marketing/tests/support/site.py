@@ -11,12 +11,13 @@ import frappe
 from tag_marketing.tests.support.network import LOCAL_INFRASTRUCTURE, NetworkGuard
 
 USERS = {
-	"agent": ("wa-harness-agent@example.invalid", "Sales User"),
-	"manager": ("wa-harness-manager@example.invalid", "System Manager"),
-	"marketing": ("wa-marketing@example.invalid", "Marketing User"),
-	"marketing_manager": ("wa-marketing-mgr@example.invalid", "Marketing Manager"),
-	"analyst": ("wa-analyst@example.invalid", "Marketing Analyst"),
-	"inbox": ("wa-inbox@example.invalid", "WhatsApp Agent"),
+	"parity": ("wa-parity@example.invalid", ("System Manager", "Marketing Manager", "Sales User")),
+	"agent": ("wa-harness-agent@example.invalid", ("Sales User",)),
+	"manager": ("wa-harness-manager@example.invalid", ("System Manager",)),
+	"marketing": ("wa-marketing@example.invalid", ("Marketing User",)),
+	"marketing_manager": ("wa-marketing-mgr@example.invalid", ("Marketing Manager",)),
+	"analyst": ("wa-analyst@example.invalid", ("Marketing Analyst",)),
+	"inbox": ("wa-inbox@example.invalid", ("WhatsApp Agent",)),
 }
 
 
@@ -55,7 +56,7 @@ def create_user(kind, password=None, run_id=None):
 			"enabled": 1,
 			"user_type": "System User",
 			"send_welcome_email": 0,
-			"roles": [{"role": USERS[kind][1]}],
+			"roles": [{"role": role} for role in USERS[kind][1]],
 		}
 	)
 	if password:
@@ -88,7 +89,11 @@ def prepare_browser(run_id):
 			user = create_user(kind, password, run_id)
 			result[kind] = {"username": user.name, "password": password}
 		from tag_marketing.tests.support.progress import prepare
+
 		result["operations"] = prepare(run_id)
+		result["connection"] = frappe.db.get_value(
+			"WA Operation", result["operations"]["Pending"], "target_name"
+		)
 	return result
 
 
@@ -105,6 +110,7 @@ def cleanup_records(run_id):
 			raise RuntimeError("Refusing to delete a user not owned by this fixture run")
 		owned.append(email)
 	from tag_marketing.tests.support.progress import cleanup
+
 	cleanup(run_id)
 	for email in owned:
 		frappe.delete_doc("User", email, ignore_permissions=True)
@@ -116,4 +122,5 @@ def cleanup_browser(run_id):
 	with fixture_transaction():
 		cleanup_records(run_id)
 	from tag_marketing.tests.support.progress import finish_cleanup
+
 	finish_cleanup(run_id)

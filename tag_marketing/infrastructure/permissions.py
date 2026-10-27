@@ -66,6 +66,21 @@ def has_permission(doc, ptype=None, user=None, **kwargs):
 	user = user or frappe.session.user
 	if doc.doctype == "WA Settings":
 		return "System Manager" in frappe.get_roles(user)
+	roles = set(frappe.get_roles(user))
+	if doc.doctype == "WA Connection" and ptype == "create":
+		return "System Manager" in roles and bool(
+			frappe.db.get_single_value("WA Settings", "marketing_company")
+			and company_allowed(
+				frappe.db.get_single_value("WA Settings", "marketing_company"), user, doc.doctype
+			)
+		)
+	if ptype == "write" and doc.doctype in {"WA Connection", "WA Sending Number"}:
+		company = frappe.db.get_single_value("WA Settings", "marketing_company")
+		return (
+			"System Manager" in roles
+			and doc.company == company
+			and company_allowed(company, user, doc.doctype)
+		)
 	if ptype not in ("read", "select") or doc.doctype in DEFERRED_READ_TYPES:
 		return False
 	company = frappe.db.get_single_value("WA Settings", "marketing_company")

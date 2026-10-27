@@ -74,7 +74,7 @@ export function show_error(error, { on_reload = null, trigger = document.activeE
  if (error.field) $("<p></p>").text(__("Check field: {0}", [error.field])).appendTo(state);
  dialog.set_primary_action(__("Close"), () => dialog.hide());
  if (error.code === "STALE_DOCUMENT" && on_reload) { dialog.set_secondary_action_label(__("Reload and review")); dialog.set_secondary_action(() => { dialog.hide(); on_reload(); }); }
- dialog.onhide = () => restore_focus(trigger);
+ dialog.$wrapper.one("hidden.bs.modal", () => restore_focus(trigger));
  dialog.show();
  return dialog;
 }
@@ -100,7 +100,7 @@ export function show_operation(operation, { trigger = document.activeElement } =
    if (last !== signature) {
     const labels = { Pending: __("Pending"), Running: __("Running"), Succeeded: __("Succeeded"), Failed: __("Failed"), Cancelled: __("Cancelled") };
     const state = render_state(body, { title: labels[data.status] || __("Unavailable"), message: data.error?.message || __("Progress: {0}%", [data.progress_percent]) });
-    $("<progress max='100'></progress>").attr({ value: data.progress_percent, "aria-label": __("Operation progress") }).appendTo(state);
+    $("<div class='progress'></div>").append($("<div class='progress-bar' role='progressbar'></div>").attr({ "aria-valuenow": data.progress_percent, "aria-valuemin": 0, "aria-valuemax": 100, "aria-label": __("Operation progress") }).css("width", data.progress_percent + "%")).appendTo(state);
     last = signature;
    }
    if (!terminal.has(data.status)) timer = window.setTimeout(refresh, 3000);
@@ -109,7 +109,8 @@ export function show_operation(operation, { trigger = document.activeElement } =
   } finally { inflight = false; }
  };
  dialog.set_secondary_action(refresh);
- dialog.onhide = () => { closed = true; window.clearTimeout(timer); restore_focus(trigger); };
+ dialog.onhide = () => { closed = true; window.clearTimeout(timer); };
+ dialog.$wrapper.one("hidden.bs.modal", () => restore_focus(trigger));
  dialog.show(); refresh();
  return dialog;
 }

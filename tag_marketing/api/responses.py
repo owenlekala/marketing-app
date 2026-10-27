@@ -6,7 +6,22 @@ from functools import wraps
 import frappe
 from frappe import _
 
-from tag_marketing.domain.errors import HTTP_STATUS, CommandError
+from tag_marketing.domain.errors import CommandError
+
+HTTP_STATUS = {
+	"INVALID_INPUT": 400,
+	"INVALID_FILTER": 400,
+	"NOT_FOUND": 404,
+	"SOURCE_ACCESS_DENIED": 403,
+	"COMPANY_MISMATCH": 403,
+	"STALE_DOCUMENT": 409,
+	"IDEMPOTENCY_CONFLICT": 409,
+	"INVALID_STATE": 409,
+	"READINESS_FAILED": 422,
+	"LOCAL_RATE_LIMIT": 429,
+	"PROVIDER_UNAVAILABLE": 502,
+	"PERSISTENCE_UNAVAILABLE": 503,
+}
 
 
 def error_payload(code, correlation_id, field=None):
@@ -25,12 +40,21 @@ def error_payload(code, correlation_id, field=None):
 		"PERSISTENCE_UNAVAILABLE": _("Operation progress is temporarily unavailable."),
 		"INTERNAL_ERROR": _("Unable to complete this request. Give the reference to your administrator."),
 	}
-	return {"ok": False, "error": {"code": code, "message": messages.get(code, messages["INTERNAL_ERROR"]),
-		"field": field, "retryable": code == "PERSISTENCE_UNAVAILABLE", "correlation_id": correlation_id}}
+	return {
+		"ok": False,
+		"error": {
+			"code": code,
+			"message": messages.get(code, messages["INTERNAL_ERROR"]),
+			"field": field,
+			"retryable": code == "PERSISTENCE_UNAVAILABLE",
+			"correlation_id": correlation_id,
+		},
+	}
 
 
 def boundary(*, mutates=False):
 	"""A failed command rolls back its slice; the request/worker owns commit and idempotency."""
+
 	def decorate(function):
 		@wraps(function)
 		def wrapped(*args, **kwargs):
@@ -42,16 +66,23 @@ def boundary(*, mutates=False):
 			except Exception as exc:
 				if mutates:
 					frappe.db.rollback(save_point=point)
-				if isinstance(exc, (frappe.PermissionError, frappe.AuthenticationError, frappe.ValidationError)):
+				if isinstance(exc, (frappe.PermissionError, frappe.AuthenticationError)):
 					raise
 				frappe.local.message_log = []
 				correlation = uuid.uuid4().hex
+				if isinstance(exc, frappe.ValidationError):
+					frappe.local.response["http_status_code"] = HTTP_STATUS["INVALID_INPUT"]
+					return error_payload("INVALID_INPUT", correlation)
 				if isinstance(exc, CommandError):
 					frappe.local.response["http_status_code"] = HTTP_STATUS[exc.code]
 					return error_payload(exc.code, correlation, exc.field)
 				frappe.local.response["http_status_code"] = 500
 				# Exception classes are developer-defined. No str(exc), exc_info or request locals.
-				frappe.logger("tag_marketing").error("Command failure [%s] %s", correlation, type(exc).__name__)
+				frappe.logger("tag_marketing").error(
+					"Command failure [%s] %s", correlation, type(exc).__name__
+				)
 				return error_payload("INTERNAL_ERROR", correlation)
+
 		return wrapped
+
 	return decorate
