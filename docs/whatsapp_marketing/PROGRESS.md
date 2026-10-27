@@ -188,7 +188,7 @@ Verified on 27 October 2026; implementation commit `eb3d9df`. This follow-up clo
 
 ## WA-P1-001 — Owned schema, roles and settings guards
 
-Status: **Verified** on 27 October 2026. Scope: WA-A01 schema/install/migration and the foundation company/role portions of WA-A03. Source selection, feature workflows and production qualification remain later tasks. No navigation task has begun.
+Status: **Verified** on 27 October 2026. Implementation commit: `e93e0a1`. Scope: WA-A01 schema/install/migration and the foundation company/role portions of WA-A03. Source selection, feature workflows and production qualification remain later tasks. No navigation task has begun.
 
 - Added all 31 documented parent DocTypes and five child DocTypes as native metadata, thin lifecycle adapters, server-side settings policy, company/assignment read restrictions and idempotent setup. Feature writes remain closed; [foundation boundaries](DATA_MODEL.md#foundation-implementation-boundary) and [staged permissions](PERMISSIONS_AND_PRIVACY.md#foundation-access-and-staged-availability) own the current availability rules.
 - Single-field unique indexes are native metadata; compound constraints/indexes have one owned manifest. Corrected reserved identifier quoting after the first migration failed on row_number. Main-site migration subsequently passed. A concurrent dashboard write in another installed app caused a separate migration deadlock; pausing and restoring only the owned workers/scheduler allowed it to complete without modifying sibling code.
