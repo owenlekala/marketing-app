@@ -1,6 +1,6 @@
 # Progress and evidence
 
-Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-003 verified; WA-P0-004 harness verification in progress**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-003 verified; WA-P0-004 implemented, final gate waiting for a stable shared runtime**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
@@ -133,7 +133,7 @@ Status: **Verified** on 27 October 2026. Initial application commit: `971e7b5966
 
 ## WA-P0-004 — Test harness and deterministic adapters
 
-Status: **In progress** on 27 October 2026. Acceptance scope: WA-A01 scaffold checks and WA-A18 executable governance. Production and feature-specific acceptance remain unqualified.
+Status: **Blocked for final combined verification** on 27 October 2026. Harness implementation commits: `431c8b2e2c1879c296bd124c3a5ee1b45bd48d40` and `9d50ae11f2adb88d202ed9bd12437e50c315b7fc`. Acceptance scope: WA-A01 scaffold checks and WA-A18 executable governance. Production and feature-specific acceptance remain unqualified.
 
 - Added framework-independent clock/byte-transport protocols and scripted test adapters. Pure tests cover UTC advancement, rejected naive/backward time, scripted throttling/timeouts, exhausted/unused provider outcomes and stable captured requests. These are transport harness fixtures, not verified Meta payloads.
 - Added process-local socket/DNS/direct-IP/UDP guards and app test bases. A nested leaking-test probe proves that catching an unexpected-network exception still leaves a failing test. App integration tests allow only the owned DB/cache endpoints and restore user/transaction state after every test.
@@ -145,4 +145,21 @@ Status: **In progress** on 27 October 2026. Acceptance scope: WA-A01 scaffold ch
 
 The standard multi-browser image download was too slow to qualify the harness promptly. Stopped only this task's superseded download processes and selected a smaller Chromium-only image on the already locked Python 3.14/Node 24 Bench base; the generator is owned by quality.py.
 
-Pending: finish native-browser screenshots and deliberate browser-egress rejection; final all-checks pass, cleanup inspection and completion evidence. Do not close this task based only on configuration or the passing Python checks.
+### Executed harness evidence
+
+- `python3 development/whatsapp_marketing/quality.py setup` exited 0: generated Chromium-only image build, hash-locked Python tools and integrity-locked npm dependencies installed. Tested local image ID: `sha256:a151d1d08a58914d0569b5c1651239c114e40c0024cd772484d70e1d546da63a`. Base runtime remains Python 3.14.8 / Node v24.22.0; Playwright 1.58.2 installed Chromium Headless Shell 145.0.7632.6, revision 1208. The test network reports `Internal=true`.
+- Python lint/format and mypy passed across 23 app/runtime files before concurrent runtime edits. After those edits, focused checks of only the owned application/test/quality-controller files passed (13 source files), without formatting the other work. TypeScript `tsc --noEmit` passed in the browser service.
+- Pure unittest: **4 passed**. Native `bench --site wa-marketing.localhost run-tests --app tag_marketing`: **5 integration tests passed**, plus the same four pure classes discovered under Frappe's unspecified category. This proves per-test database rollback, module registration, required-app bounds, two-user native permissions and rejection of the wrong site/disabled tests.
+- `python3 development/whatsapp_marketing/quality.py browser` exited 0 after the readiness fix: **8 real Chromium cases passed** across two users, desktop light/dark, tablet and mobile. The separate deliberate external HTTP probe failed for the expected guard assertion, and its controller reported PASS. No retries or fabricated application responses were used.
+- Early browser runs exposed a five-second cold-navigation assumption and testing before UI startup. A later combined run exposed the same root issue while the theme API was still undefined. The final harness waits for actual native sidebar/theme availability before interacting, activates native Search from the keyboard and verifies dialog input focus. Server-injected boot data alone is not readiness.
+- Saved eight synthetic-user screenshots under `development/whatsapp_marketing/.local/test-results/browser/*/native-desk.png`; visually inspected dark desktop and 390px mobile images against the native ERPNext Desk. These qualify the harness shell, not the future marketing pages.
+- Verified no Role rollback probe or synthetic users remained; temporary browser credentials were removed. Three standalone fixture create/delete cycles and three ordered integration-to-fixture cycles passed. A combined invocation had an intermittent fixture CLI failure; Bench's fallback exposed NameError and hid its original cause. The controller now reports the safe exception-class chain without captured credentials. No automatic retry masks fixture failures.
+- `python3 development/whatsapp_marketing/runtime.py verify` passed before the concurrent runtime expansion: Frappe/ERPNext/TAG Marketing installed, DB/Redis, module/dependency checks, credential isolation, web/assets, realtime, two registered workers, actual marketing-queue and scheduler probes true. This is historical evidence for that baseline, not qualification of subsequent runtime changes.
+
+### Current external blocker and exact next action
+
+Concurrent edits outside this task changed bootstrap, Compose, runtime lock/controller/verifier and the setup guide to add HRMS, localisation and payroll. A bootstrap container was actively modifying the shared Bench when inspected. The existing web container's Bench command discovery reported missing `hrms`, `za_local_core` and `za_local_payroll` modules while the site still listed Frappe, ERPNext and TAG Marketing. This makes a final combined run against that moving environment unreliable; these additional apps have not been qualified by this task.
+
+The user explicitly confirmed: **keep this task focused on the WhatsApp harness**. Preserved those runtime edits and the existing license change, and excluded them from the follow-up harness commit. Do not revert or take ownership of that parallel work to make this task appear green.
+
+Next: once the shared bootstrap is finished and its containers can consistently import their configured apps, inspect the actual runtime and run `python3 development/whatsapp_marketing/quality.py all` from the app root. Record its exit status and fixture cleanup, revalidate documentation, then close only WA-P0-004. Its authoritative checkbox remains unchecked. Do not begin WA-P1-001 until this gate passes. The harness implementation and focused checks are complete; the full combined command has **not** been claimed as passing.
