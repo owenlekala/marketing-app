@@ -1,0 +1,211 @@
+{
+ "doctype": "DocType",
+ "name": "WA Message",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "conversation",
+  "direction",
+  "purpose",
+  "body_text",
+  "media_file",
+  "template",
+  "template_payload_json",
+  "provider_message_id",
+  "logical_key",
+  "status",
+  "campaign_recipient",
+  "automation_run",
+  "reply_to_provider_id",
+  "replacement_for",
+  "initiated_by",
+  "submitted_at",
+  "sent_at",
+  "delivered_at",
+  "read_at",
+  "received_at",
+  "error_code"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "conversation",
+   "fieldtype": "Link",
+   "label": "Conversation",
+   "read_only": 1,
+   "options": "WA Conversation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "label": "Direction",
+   "read_only": 1,
+   "options": "Inbound\nOutbound",
+   "default": "Inbound"
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "read_only": 1,
+   "options": "Marketing\nUtility\nSupport\nTest",
+   "default": "Marketing"
+  },
+  {
+   "fieldname": "body_text",
+   "fieldtype": "Long Text",
+   "label": "Body Text",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "media_file",
+   "fieldtype": "Link",
+   "label": "Media File",
+   "read_only": 1,
+   "options": "File"
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "label": "Template",
+   "read_only": 1,
+   "options": "WA Template"
+  },
+  {
+   "fieldname": "template_payload_json",
+   "fieldtype": "JSON",
+   "label": "Template Payload JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "provider_message_id",
+   "fieldtype": "Data",
+   "label": "Provider Message ID",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "logical_key",
+   "fieldtype": "Data",
+   "label": "Logical Key",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Queued\nSubmitting\nAccepted\nSent\nDelivered\nRead\nUnknown\nFailed\nSuppressed\nCancelled\nReceived",
+   "default": "Queued",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "campaign_recipient",
+   "fieldtype": "Link",
+   "label": "Campaign Recipient",
+   "read_only": 1,
+   "options": "WA Campaign Recipient"
+  },
+  {
+   "fieldname": "automation_run",
+   "fieldtype": "Link",
+   "label": "Automation Run",
+   "read_only": 1,
+   "options": "WA Automation Run"
+  },
+  {
+   "fieldname": "reply_to_provider_id",
+   "fieldtype": "Data",
+   "label": "Reply To Provider ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "replacement_for",
+   "fieldtype": "Link",
+   "label": "Replacement For",
+   "read_only": 1,
+   "options": "WA Message"
+  },
+  {
+   "fieldname": "initiated_by",
+   "fieldtype": "Link",
+   "label": "Initiated By",
+   "read_only": 1,
+   "options": "User"
+  },
+  {
+   "fieldname": "submitted_at",
+   "fieldtype": "Datetime",
+   "label": "Submitted At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_at",
+   "fieldtype": "Datetime",
+   "label": "Sent At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivered_at",
+   "fieldtype": "Datetime",
+   "label": "Delivered At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "read_at",
+   "fieldtype": "Datetime",
+   "label": "Read At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "received_at",
+   "fieldtype": "Datetime",
+   "label": "Received At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_code",
+   "fieldtype": "Data",
+   "label": "Error Code",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

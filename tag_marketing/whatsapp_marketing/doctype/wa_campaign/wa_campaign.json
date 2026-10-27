@@ -1,0 +1,217 @@
+{
+ "doctype": "DocType",
+ "name": "WA Campaign",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "format:WA-CAM-{YYYY}-{#####}",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "campaign_name",
+  "purpose",
+  "sending_number",
+  "segment",
+  "exclusions_json",
+  "template",
+  "variable_mapping_json",
+  "media_file",
+  "scheduled_at",
+  "start_mode",
+  "expires_at",
+  "schedule_timezone",
+  "status",
+  "current_snapshot",
+  "approved_by",
+  "approved_at",
+  "approval_hash",
+  "test_message",
+  "erpnext_campaign",
+  "estimated_budget",
+  "currency"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "campaign_name",
+   "fieldtype": "Data",
+   "label": "Campaign Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "read_only": 1,
+   "options": "Marketing",
+   "default": "Marketing"
+  },
+  {
+   "fieldname": "sending_number",
+   "fieldtype": "Link",
+   "label": "Sending Number",
+   "read_only": 1,
+   "options": "WA Sending Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "segment",
+   "fieldtype": "Link",
+   "label": "Segment",
+   "read_only": 1,
+   "options": "WA Audience Segment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "exclusions_json",
+   "fieldtype": "JSON",
+   "label": "Exclusions JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "label": "Template",
+   "read_only": 1,
+   "options": "WA Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "variable_mapping_json",
+   "fieldtype": "JSON",
+   "label": "Variable Mapping JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "media_file",
+   "fieldtype": "Link",
+   "label": "Media File",
+   "read_only": 1,
+   "options": "File"
+  },
+  {
+   "fieldname": "scheduled_at",
+   "fieldtype": "Datetime",
+   "label": "Scheduled At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "start_mode",
+   "fieldtype": "Select",
+   "label": "Start Mode",
+   "read_only": 1,
+   "options": "Now\nScheduled",
+   "default": "Now",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Expires At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "schedule_timezone",
+   "fieldtype": "Data",
+   "label": "Schedule Timezone",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Draft\nPending Approval\nApproved\nScheduled\nRunning\nCompleted\nPaused\nCancelled\nFailed",
+   "default": "Draft",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "current_snapshot",
+   "fieldtype": "Link",
+   "label": "Current Snapshot",
+   "read_only": 1,
+   "options": "WA Campaign Snapshot"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "read_only": 1,
+   "options": "User"
+  },
+  {
+   "fieldname": "approved_at",
+   "fieldtype": "Datetime",
+   "label": "Approved At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approval_hash",
+   "fieldtype": "Data",
+   "label": "Approval Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "test_message",
+   "fieldtype": "Link",
+   "label": "Test Message",
+   "read_only": 1,
+   "options": "WA Message"
+  },
+  {
+   "fieldname": "erpnext_campaign",
+   "fieldtype": "Link",
+   "label": "Erpnext Campaign",
+   "read_only": 1,
+   "options": "Campaign"
+  },
+  {
+   "fieldname": "estimated_budget",
+   "fieldtype": "Currency",
+   "label": "Estimated Budget",
+   "read_only": 1,
+   "options": "currency"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "read_only": 1,
+   "options": "Currency"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified.",
+ "title_field": "campaign_name"
+}

@@ -1,0 +1,106 @@
+{
+ "doctype": "DocType",
+ "name": "WA Webhook Event",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "connection",
+  "receipt_key",
+  "raw_payload",
+  "status",
+  "received_at",
+  "processed_at",
+  "error_code",
+  "attempt_count"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "connection",
+   "fieldtype": "Link",
+   "label": "Connection",
+   "read_only": 1,
+   "options": "WA Connection",
+   "reqd": 1
+  },
+  {
+   "fieldname": "receipt_key",
+   "fieldtype": "Data",
+   "label": "Receipt Key",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "raw_payload",
+   "fieldtype": "Long Text",
+   "label": "Raw Payload",
+   "read_only": 1,
+   "in_global_search": 0,
+   "permlevel": 2,
+   "hidden": 1,
+   "print_hide": 1,
+   "report_hide": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Ready\nProcessing\nProcessed\nFailed",
+   "default": "Ready",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "received_at",
+   "fieldtype": "Datetime",
+   "label": "Received At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "processed_at",
+   "fieldtype": "Datetime",
+   "label": "Processed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_code",
+   "fieldtype": "Data",
+   "label": "Error Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attempt_count",
+   "fieldtype": "Int",
+   "label": "Attempt Count",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

@@ -1,0 +1,99 @@
+{
+ "doctype": "DocType",
+ "name": "WA Send Reservation",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "contact",
+  "message",
+  "reserved_at",
+  "state",
+  "purpose",
+  "estimate_amount",
+  "currency"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "read_only": 1,
+   "options": "WA Contact",
+   "reqd": 1
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Link",
+   "label": "Message",
+   "read_only": 1,
+   "options": "WA Message",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "reserved_at",
+   "fieldtype": "Datetime",
+   "label": "Reserved At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Select",
+   "label": "State",
+   "read_only": 1,
+   "options": "Reserved\nRetained\nReleased",
+   "default": "Reserved"
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "read_only": 1,
+   "options": "Marketing\nTest",
+   "default": "Marketing"
+  },
+  {
+   "fieldname": "estimate_amount",
+   "fieldtype": "Currency",
+   "label": "Estimate Amount",
+   "read_only": 1,
+   "options": "currency"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "read_only": 1,
+   "options": "Currency"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

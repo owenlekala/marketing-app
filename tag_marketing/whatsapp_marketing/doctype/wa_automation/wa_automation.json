@@ -1,0 +1,99 @@
+{
+ "doctype": "DocType",
+ "name": "WA Automation",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "automation_name",
+  "status",
+  "draft_definition_json",
+  "published_version",
+  "run_as_user",
+  "sending_number",
+  "purpose"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "automation_name",
+   "fieldtype": "Data",
+   "label": "Automation Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Draft\nActive\nPaused\nArchived",
+   "default": "Draft",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "draft_definition_json",
+   "fieldtype": "JSON",
+   "label": "Draft Definition JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "published_version",
+   "fieldtype": "Link",
+   "label": "Published Version",
+   "read_only": 1,
+   "options": "WA Automation Version"
+  },
+  {
+   "fieldname": "run_as_user",
+   "fieldtype": "Link",
+   "label": "Run As User",
+   "read_only": 1,
+   "options": "User"
+  },
+  {
+   "fieldname": "sending_number",
+   "fieldtype": "Link",
+   "label": "Sending Number",
+   "read_only": 1,
+   "options": "WA Sending Number"
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "read_only": 1,
+   "options": "Marketing\nUtility\nSupport",
+   "default": "Marketing"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified.",
+ "title_field": "automation_name"
+}

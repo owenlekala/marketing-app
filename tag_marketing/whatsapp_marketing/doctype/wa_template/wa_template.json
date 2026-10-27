@@ -1,0 +1,129 @@
+{
+ "doctype": "DocType",
+ "name": "WA Template",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "connection",
+  "provider_template_id",
+  "template_name",
+  "language_code",
+  "category",
+  "components_json",
+  "status",
+  "content_hash",
+  "provider_reason",
+  "last_sync_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "connection",
+   "fieldtype": "Link",
+   "label": "Connection",
+   "read_only": 1,
+   "options": "WA Connection",
+   "reqd": 1
+  },
+  {
+   "fieldname": "provider_template_id",
+   "fieldtype": "Data",
+   "label": "Provider Template ID",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "template_name",
+   "fieldtype": "Data",
+   "label": "Template Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "language_code",
+   "fieldtype": "Data",
+   "label": "Language Code",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "read_only": 1,
+   "options": "Marketing\nUtility\nAuthentication",
+   "default": "Marketing"
+  },
+  {
+   "fieldname": "components_json",
+   "fieldtype": "JSON",
+   "label": "Components JSON",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Draft\nPending\nApproved\nRejected\nPaused\nDisabled",
+   "default": "Draft",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "content_hash",
+   "fieldtype": "Data",
+   "label": "Content Hash",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "provider_reason",
+   "fieldtype": "Small Text",
+   "label": "Provider Reason",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "last_sync_at",
+   "fieldtype": "Datetime",
+   "label": "Last Sync At",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified.",
+ "title_field": "template_name"
+}

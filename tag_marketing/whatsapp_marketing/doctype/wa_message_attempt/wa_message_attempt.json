@@ -1,0 +1,107 @@
+{
+ "doctype": "DocType",
+ "name": "WA Message Attempt",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "message",
+  "attempt_no",
+  "started_at",
+  "finished_at",
+  "result",
+  "provider_message_id",
+  "http_status",
+  "error_code",
+  "provider_trace_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Link",
+   "label": "Message",
+   "read_only": 1,
+   "options": "WA Message",
+   "reqd": 1
+  },
+  {
+   "fieldname": "attempt_no",
+   "fieldtype": "Int",
+   "label": "Attempt No",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "started_at",
+   "fieldtype": "Datetime",
+   "label": "Started At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "finished_at",
+   "fieldtype": "Datetime",
+   "label": "Finished At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "label": "Result",
+   "read_only": 1,
+   "options": "Started\nAccepted\nRejected\nUnknown",
+   "default": "Started"
+  },
+  {
+   "fieldname": "provider_message_id",
+   "fieldtype": "Data",
+   "label": "Provider Message ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "http_status",
+   "fieldtype": "Int",
+   "label": "Http Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_code",
+   "fieldtype": "Data",
+   "label": "Error Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "provider_trace_id",
+   "fieldtype": "Data",
+   "label": "Provider Trace ID",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

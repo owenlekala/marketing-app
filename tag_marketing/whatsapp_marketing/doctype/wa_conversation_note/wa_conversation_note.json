@@ -1,0 +1,78 @@
+{
+ "doctype": "DocType",
+ "name": "WA Conversation Note",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "conversation",
+  "note",
+  "author",
+  "recorded_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "conversation",
+   "fieldtype": "Link",
+   "label": "Conversation",
+   "read_only": 1,
+   "options": "WA Conversation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Link",
+   "label": "Author",
+   "read_only": 1,
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "recorded_at",
+   "fieldtype": "Datetime",
+   "label": "Recorded At",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

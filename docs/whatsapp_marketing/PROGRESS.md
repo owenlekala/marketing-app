@@ -1,6 +1,6 @@
 # Progress and evidence
 
-Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-004 verified; WA-P1-001 in progress**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-004 and WA-P1-001 verified; WA-P1-002 is next**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
@@ -46,7 +46,7 @@ Append one entry per task: task ID; status (Not started/In progress/Blocked/Veri
 
 ## Known implementation prerequisites
 
-- Begin WA-P1-001 schema/roles/settings using the verified P0 harness; keep sending disabled.
+- Begin WA-P1-002 owned Dock/Sidebar/Workspace using the verified schema; keep sending disabled.
 - Verify current official Meta API version/permissions/payloads; some developer pages were rate-limited during planning.
 - Obtain business-owned credentials, approved templates and explicitly authorised test recipients during the relevant task.
 - Configure retention policy, rate controls and operational ownership before live enablement.
@@ -188,11 +188,18 @@ Verified on 27 October 2026; implementation commit `eb3d9df`. This follow-up clo
 
 ## WA-P1-001 — Owned schema, roles and settings guards
 
-Status: **In progress** on 27 October 2026. Scope: WA-A01 schema/install/migration and the foundation company/role portions of WA-A03. Source selection, feature workflows and production qualification remain later tasks. No navigation task has begun.
+Status: **Verified** on 27 October 2026. Scope: WA-A01 schema/install/migration and the foundation company/role portions of WA-A03. Source selection, feature workflows and production qualification remain later tasks. No navigation task has begun.
 
 - Added all 31 documented parent DocTypes and five child DocTypes as native metadata, thin lifecycle adapters, server-side settings policy, company/assignment read restrictions and idempotent setup. Feature writes remain closed; [foundation boundaries](DATA_MODEL.md#foundation-implementation-boundary) and [staged permissions](PERMISSIONS_AND_PRIVACY.md#foundation-access-and-staged-availability) own the current availability rules.
 - Single-field unique indexes are native metadata; compound constraints/indexes have one owned manifest. Corrected reserved identifier quoting after the first migration failed on row_number. Main-site migration subsequently passed. A concurrent dashboard write in another installed app caused a separate migration deadlock; pausing and restoring only the owned workers/scheduler allowed it to complete without modifying sibling code.
 - Reviewed the pinned unique-key helper and found its lookup is not database-scoped. Added the local SHOW INDEX adapter and verified a missing unique key with a reserved field on a connection-local temporary table. Fresh qualification now explicitly checks every declared compound index on its own database.
 - Focused checks passed: eight offline pure tests, 25 real Frappe integration tests, and mypy across 110 sources. Integration checks include every documented parent field, every compound/scalar unique constraint, nullable provider IDs, a real two-connection race, company and team restrictions, generic/bulk/ignore_validate write denial, sharing denial, settings auditing/forgery and preservation of custom settings/roles/encryption identity.
-- Real-browser qualification passed 16 cases (native settings access/hidden credential checks and ordinary-agent API denial alongside the Desk checks) plus all three network probes. A broad checkbox locator initially matched a native display control as well as the actual input; corrected its target. Additional screenshots of the lower privacy section are being collected in the final gate.
-- Preliminary fresh ERPNext/TAG install and two migrations passed before tightening the local-index checks. Later fresh runs exposed an installation PermissionError and disposed only their own temporary sites; investigating before completing this task. No failed run is treated as qualification. The task checkbox remains unchecked until fresh installation and the final combined gate pass.
+- Real-browser qualification passed 16 cases (native settings access/hidden credential checks and ordinary-agent API denial alongside the Desk checks) plus all three network probes. A broad checkbox locator initially matched a native display control as well as the actual input; corrected its target. The final gate also captures the lower privacy section.
+- Preliminary fresh ERPNext/TAG install and two migrations passed before tightening the local-index checks. Later fresh runs exposed an installation PermissionError and disposed only their own temporary sites. Inspection found Frappe post_install.init_singles saves before after_sync and requests ignore_validate. Seeding safe defaults/key during the owned settings DocType sync avoids that early save while preserving before_validate guards. The corrected fresh install and both migrations exited 0, verified only Frappe/ERPNext/TAG installed, all declared indexes present, customised setting/role preserved and the encrypted key unchanged. The qualification site was disposed successfully.
+
+- The authorised System Manager save test additionally found that sparse Single defaults lacked the canonical name. Seeding that identity fixed ordinary saves after field-level filtering without granting creation rights or exposing the secret. Missing existing encryption material stops migration for recovery; it is never silently replaced.
+- Final `python3 development/whatsapp_marketing/quality.py all` exited **0**: documentation structure, Ruff lint/format, mypy over **110 sources**, **8 offline tests**, **27 real integration tests**, strict TypeScript, **16 Chromium cases** and **3 intended network-guard failures**. No retries were used. Frappe emits a native v17 deprecation notice for its limit_page_length adapter; it does not fail the pinned v16 suite.
+- Ran `bench --site wa-marketing.localhost migrate` twice more, both exit 0, with the owned scheduler/workers restored in finally. This verifies the main installed environment as well as the isolated fresh-install path. The additional apps remain outside marketing business qualification.
+- Screenshots are under `development/whatsapp_marketing/.local/test-results/browser/foundation-*/native-settings*.png` alongside Desk references. Visually inspected the dark desktop/privacy section and 390px mobile form: native controls, spacing, theme and responsive layout are intact. No custom UI framework or global CSS was added. The default generated module sidebar is not the final P1-002 navigation.
+- Final cleanup checks found zero harness/foundation users, synthetic companies or race rows, no qualification site and no private browser manifest/credential file. Sending remains **0** and all eight owned runtime services are running. Documentation validation and whitespace checks are repeated after this evidence update.
+- Only WA-P1-001 is completed. Next: **WA-P1-002** owned Dock/Sidebar/Workspace and safe destinations. Features remain gated according to their own tasks; this schema task does not qualify live messaging or production release.

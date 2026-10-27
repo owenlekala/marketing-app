@@ -1,0 +1,118 @@
+{
+ "doctype": "DocType",
+ "name": "WA Campaign Snapshot",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "campaign",
+  "version",
+  "status",
+  "configuration_json",
+  "snapshot_hash",
+  "recipient_count",
+  "excluded_summary_json",
+  "selected_by",
+  "created_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "campaign",
+   "fieldtype": "Link",
+   "label": "Campaign",
+   "read_only": 1,
+   "options": "WA Campaign",
+   "reqd": 1
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "label": "Version",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Building\nReady\nSuperseded",
+   "default": "Building",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "configuration_json",
+   "fieldtype": "JSON",
+   "label": "Configuration JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Snapshot Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recipient_count",
+   "fieldtype": "Int",
+   "label": "Recipient Count",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "excluded_summary_json",
+   "fieldtype": "JSON",
+   "label": "Excluded Summary JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "selected_by",
+   "fieldtype": "Link",
+   "label": "Selected By",
+   "read_only": 1,
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "created_at",
+   "fieldtype": "Datetime",
+   "label": "Created At",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

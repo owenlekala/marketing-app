@@ -4,7 +4,7 @@
 
 ## WA-P1-001
 
-- [ ] **Implement owned schema, roles and settings guards**
+- [x] **Implement owned schema, roles and settings guards**
 
 **Depends on:** `WA-P0-004`
 

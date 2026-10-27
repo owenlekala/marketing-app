@@ -1,0 +1,266 @@
+{
+ "doctype": "DocType",
+ "name": "WA Settings",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": null,
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company_section",
+  "marketing_company",
+  "timezone",
+  "policy_section",
+  "marketing_start",
+  "marketing_end",
+  "marketing_cap",
+  "cap_window_hours",
+  "sending_section",
+  "sending_enabled",
+  "sending_scope",
+  "pilot_section",
+  "pilot_contacts",
+  "pilot_verified_at",
+  "pilot_verified_by",
+  "pilot_evidence_reference",
+  "suppression_hmac_key",
+  "limits_section",
+  "max_campaign_recipients",
+  "company_rate_per_second",
+  "privacy_section",
+  "raw_event_retention_days",
+  "message_retention_days",
+  "media_retention_days",
+  "consent_retention_days",
+  "privacy_notice_url",
+  "retention_policy_reference",
+  "sources_section",
+  "enabled_source_types"
+ ],
+ "fields": [
+  {
+   "fieldname": "company_section",
+   "fieldtype": "Section Break",
+   "label": "Company"
+  },
+  {
+   "fieldname": "marketing_company",
+   "fieldtype": "Link",
+   "label": "Marketing Company",
+   "read_only": 0,
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "timezone",
+   "fieldtype": "Data",
+   "label": "Timezone",
+   "read_only": 0,
+   "reqd": 1,
+   "default": "Africa/Johannesburg"
+  },
+  {
+   "fieldname": "policy_section",
+   "fieldtype": "Section Break",
+   "label": "Marketing Policy"
+  },
+  {
+   "fieldname": "marketing_start",
+   "fieldtype": "Time",
+   "label": "Marketing Start",
+   "read_only": 0,
+   "reqd": 1,
+   "default": "09:00:00"
+  },
+  {
+   "fieldname": "marketing_end",
+   "fieldtype": "Time",
+   "label": "Marketing End",
+   "read_only": 0,
+   "reqd": 1,
+   "default": "17:00:00"
+  },
+  {
+   "fieldname": "marketing_cap",
+   "fieldtype": "Int",
+   "label": "Marketing Cap",
+   "read_only": 0,
+   "reqd": 1,
+   "default": "1"
+  },
+  {
+   "fieldname": "cap_window_hours",
+   "fieldtype": "Int",
+   "label": "Cap Window Hours",
+   "read_only": 0,
+   "reqd": 1,
+   "default": "24"
+  },
+  {
+   "fieldname": "sending_section",
+   "fieldtype": "Section Break",
+   "label": "Sending Controls"
+  },
+  {
+   "fieldname": "sending_enabled",
+   "fieldtype": "Check",
+   "label": "Sending Enabled",
+   "read_only": 0,
+   "default": "0",
+   "description": "Sending remains unavailable until connection, consent and dispatch readiness are implemented and verified."
+  },
+  {
+   "fieldname": "sending_scope",
+   "fieldtype": "Select",
+   "label": "Sending Scope",
+   "read_only": 0,
+   "options": "Pilot\nLive",
+   "default": "Pilot"
+  },
+  {
+   "fieldname": "pilot_section",
+   "fieldtype": "Section Break",
+   "label": "Pilot Allowlist and Review"
+  },
+  {
+   "fieldname": "pilot_contacts",
+   "fieldtype": "Table",
+   "label": "Pilot Contacts",
+   "read_only": 0,
+   "options": "WA Pilot Contact"
+  },
+  {
+   "fieldname": "pilot_verified_at",
+   "fieldtype": "Datetime",
+   "label": "Pilot Verified At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pilot_verified_by",
+   "fieldtype": "Link",
+   "label": "Pilot Verified By",
+   "read_only": 1,
+   "options": "User"
+  },
+  {
+   "fieldname": "pilot_evidence_reference",
+   "fieldtype": "Small Text",
+   "label": "Pilot Evidence Reference",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "suppression_hmac_key",
+   "fieldtype": "Password",
+   "label": "Suppression HMAC Key",
+   "read_only": 1,
+   "in_global_search": 0,
+   "permlevel": 2,
+   "print_hide": 1,
+   "report_hide": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "limits_section",
+   "fieldtype": "Section Break",
+   "label": "Sending Limits"
+  },
+  {
+   "fieldname": "max_campaign_recipients",
+   "fieldtype": "Int",
+   "label": "Max Campaign Recipients",
+   "read_only": 1,
+   "default": "10000"
+  },
+  {
+   "fieldname": "company_rate_per_second",
+   "fieldtype": "Float",
+   "label": "Company Rate Per Second",
+   "read_only": 0,
+   "reqd": 0
+  },
+  {
+   "fieldname": "privacy_section",
+   "fieldtype": "Section Break",
+   "label": "Retention and Privacy"
+  },
+  {
+   "fieldname": "raw_event_retention_days",
+   "fieldtype": "Int",
+   "label": "Raw Event Retention Days",
+   "read_only": 0,
+   "reqd": 0
+  },
+  {
+   "fieldname": "message_retention_days",
+   "fieldtype": "Int",
+   "label": "Message Retention Days",
+   "read_only": 0,
+   "reqd": 0
+  },
+  {
+   "fieldname": "media_retention_days",
+   "fieldtype": "Int",
+   "label": "Media Retention Days",
+   "read_only": 0,
+   "reqd": 0
+  },
+  {
+   "fieldname": "consent_retention_days",
+   "fieldtype": "Int",
+   "label": "Consent Retention Days",
+   "read_only": 0,
+   "reqd": 0
+  },
+  {
+   "fieldname": "privacy_notice_url",
+   "fieldtype": "Data",
+   "label": "Privacy Notice URL",
+   "read_only": 0,
+   "reqd": 0
+  },
+  {
+   "fieldname": "retention_policy_reference",
+   "fieldtype": "Small Text",
+   "label": "Retention Policy Reference",
+   "read_only": 0,
+   "reqd": 0,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "sources_section",
+   "fieldtype": "Section Break",
+   "label": "ERPNext Sources"
+  },
+  {
+   "fieldname": "enabled_source_types",
+   "fieldtype": "Table",
+   "label": "Enabled Source Types",
+   "read_only": 0,
+   "options": "WA Source Type"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Configure the marketing company and policies. Sending is disabled while feature readiness is unverified.",
+ "issingle": 1
+}

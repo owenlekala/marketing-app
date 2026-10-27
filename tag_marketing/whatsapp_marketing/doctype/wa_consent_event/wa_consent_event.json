@@ -1,0 +1,133 @@
+{
+ "doctype": "DocType",
+ "name": "WA Consent Event",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "contact",
+  "purpose",
+  "event_type",
+  "occurred_at",
+  "recorded_at",
+  "source",
+  "notice_version",
+  "evidence_file",
+  "evidence_reference",
+  "source_event_key",
+  "recorded_by"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "read_only": 1,
+   "options": "WA Contact",
+   "reqd": 1
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "read_only": 1,
+   "options": "Marketing",
+   "default": "Marketing"
+  },
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Select",
+   "label": "Event Type",
+   "read_only": 1,
+   "options": "Granted\nWithdrawn",
+   "default": "Granted"
+  },
+  {
+   "fieldname": "occurred_at",
+   "fieldtype": "Datetime",
+   "label": "Occurred At",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "recorded_at",
+   "fieldtype": "Datetime",
+   "label": "Recorded At",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "read_only": 1,
+   "options": "Web Form\nCSV Evidence\nAgent Recorded\nInbound Keyword\nUnsubscribe Button",
+   "default": "Web Form"
+  },
+  {
+   "fieldname": "notice_version",
+   "fieldtype": "Data",
+   "label": "Notice Version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "evidence_file",
+   "fieldtype": "Link",
+   "label": "Evidence File",
+   "read_only": 1,
+   "options": "File"
+  },
+  {
+   "fieldname": "evidence_reference",
+   "fieldtype": "Small Text",
+   "label": "Evidence Reference",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "source_event_key",
+   "fieldtype": "Data",
+   "label": "Source Event Key",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "recorded_by",
+   "fieldtype": "Link",
+   "label": "Recorded By",
+   "read_only": 1,
+   "options": "User",
+   "reqd": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

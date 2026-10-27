@@ -1,0 +1,124 @@
+{
+ "doctype": "DocType",
+ "name": "WA Import Batch",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "source_file",
+  "mapping_json",
+  "status",
+  "row_count",
+  "valid_count",
+  "rejected_count",
+  "result_file",
+  "operation",
+  "requested_by",
+  "input_hash"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "source_file",
+   "fieldtype": "Link",
+   "label": "Source File",
+   "read_only": 1,
+   "options": "File",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mapping_json",
+   "fieldtype": "JSON",
+   "label": "Mapping JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Validating\nPreview Ready\nImporting\nCompleted\nFailed",
+   "default": "Validating",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "row_count",
+   "fieldtype": "Int",
+   "label": "Row Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "valid_count",
+   "fieldtype": "Int",
+   "label": "Valid Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rejected_count",
+   "fieldtype": "Int",
+   "label": "Rejected Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "result_file",
+   "fieldtype": "Link",
+   "label": "Result File",
+   "read_only": 1,
+   "options": "File"
+  },
+  {
+   "fieldname": "operation",
+   "fieldtype": "Link",
+   "label": "Operation",
+   "read_only": 1,
+   "options": "WA Operation"
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "read_only": 1,
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "input_hash",
+   "fieldtype": "Data",
+   "label": "Input Hash",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

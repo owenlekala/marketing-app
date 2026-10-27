@@ -1,0 +1,124 @@
+{
+ "doctype": "DocType",
+ "name": "WA Contact",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "phone_e164",
+  "display_name",
+  "language",
+  "timezone",
+  "tags",
+  "source_links",
+  "consent_status",
+  "suppressed",
+  "last_inbound_at",
+  "archived"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "label": "Phone (E.164)",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "label": "Display Name",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Language",
+   "read_only": 1,
+   "options": "Language"
+  },
+  {
+   "fieldname": "timezone",
+   "fieldtype": "Data",
+   "label": "Timezone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tags",
+   "fieldtype": "Table",
+   "label": "Tags",
+   "read_only": 1,
+   "options": "WA Contact Tag"
+  },
+  {
+   "fieldname": "source_links",
+   "fieldtype": "Table",
+   "label": "Source Links",
+   "read_only": 1,
+   "options": "WA Source Link"
+  },
+  {
+   "fieldname": "consent_status",
+   "fieldtype": "Select",
+   "label": "Consent Status",
+   "read_only": 1,
+   "options": "Unknown\nGranted\nWithdrawn",
+   "default": "Unknown"
+  },
+  {
+   "fieldname": "suppressed",
+   "fieldtype": "Check",
+   "label": "Suppressed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_inbound_at",
+   "fieldtype": "Datetime",
+   "label": "Last Inbound At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "archived",
+   "fieldtype": "Check",
+   "label": "Archived",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified.",
+ "title_field": "display_name"
+}

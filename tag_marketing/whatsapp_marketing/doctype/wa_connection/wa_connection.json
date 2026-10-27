@@ -1,0 +1,161 @@
+{
+ "doctype": "DocType",
+ "name": "WA Connection",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "connection_name",
+  "public_id",
+  "meta_app_id",
+  "waba_id",
+  "api_version",
+  "access_token",
+  "app_secret",
+  "verify_token",
+  "status",
+  "last_validated_at",
+  "last_webhook_at",
+  "last_error_code",
+  "last_error_summary"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "connection_name",
+   "fieldtype": "Data",
+   "label": "Connection Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "public_id",
+   "fieldtype": "Data",
+   "label": "Public ID",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "meta_app_id",
+   "fieldtype": "Data",
+   "label": "Meta App ID",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "waba_id",
+   "fieldtype": "Data",
+   "label": "WABA ID",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "api_version",
+   "fieldtype": "Data",
+   "label": "API Version",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Password",
+   "label": "Access Token",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0,
+   "permlevel": 1,
+   "print_hide": 1,
+   "report_hide": 1
+  },
+  {
+   "fieldname": "app_secret",
+   "fieldtype": "Password",
+   "label": "App Secret",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0,
+   "permlevel": 1,
+   "print_hide": 1,
+   "report_hide": 1
+  },
+  {
+   "fieldname": "verify_token",
+   "fieldtype": "Password",
+   "label": "Verify Token",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0,
+   "permlevel": 1,
+   "print_hide": 1,
+   "report_hide": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Draft\nVerifying\nReady\nDegraded\nDisabled",
+   "default": "Draft",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "last_validated_at",
+   "fieldtype": "Datetime",
+   "label": "Last Validated At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_webhook_at",
+   "fieldtype": "Datetime",
+   "label": "Last Webhook At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_error_code",
+   "fieldtype": "Data",
+   "label": "Last Error Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_error_summary",
+   "fieldtype": "Small Text",
+   "label": "Last Error Summary",
+   "read_only": 1,
+   "in_global_search": 0
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 1,
+   "read": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified.",
+ "title_field": "connection_name"
+}

@@ -1,0 +1,106 @@
+{
+ "doctype": "DocType",
+ "name": "WA Privacy Hold",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "scope",
+  "contact",
+  "categories_json",
+  "reason",
+  "authority_reference",
+  "active",
+  "expires_at",
+  "reviewed_by"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "scope",
+   "fieldtype": "Select",
+   "label": "Scope",
+   "read_only": 1,
+   "options": "Company\nContact\nCategory",
+   "default": "Company"
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "read_only": 1,
+   "options": "WA Contact",
+   "reqd": 1
+  },
+  {
+   "fieldname": "categories_json",
+   "fieldtype": "JSON",
+   "label": "Categories JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "authority_reference",
+   "fieldtype": "Small Text",
+   "label": "Authority Reference",
+   "read_only": 1,
+   "reqd": 1,
+   "in_global_search": 0
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Expires At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed By",
+   "read_only": 1,
+   "options": "User",
+   "reqd": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

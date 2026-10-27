@@ -1,0 +1,109 @@
+{
+ "doctype": "DocType",
+ "name": "WA Import Row",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "batch",
+  "row_number",
+  "input_hash",
+  "row_hash",
+  "status",
+  "contact",
+  "error_code",
+  "projection_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "label": "Batch",
+   "read_only": 1,
+   "options": "WA Import Batch",
+   "reqd": 1
+  },
+  {
+   "fieldname": "row_number",
+   "fieldtype": "Int",
+   "label": "Row Number",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "input_hash",
+   "fieldtype": "Data",
+   "label": "Input Hash",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "row_hash",
+   "fieldtype": "Data",
+   "label": "Row Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Valid\nInvalid\nImported",
+   "default": "Valid",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "read_only": 1,
+   "options": "WA Contact"
+  },
+  {
+   "fieldname": "error_code",
+   "fieldtype": "Data",
+   "label": "Error Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "projection_json",
+   "fieldtype": "JSON",
+   "label": "Projection JSON",
+   "read_only": 1,
+   "in_global_search": 0
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+}

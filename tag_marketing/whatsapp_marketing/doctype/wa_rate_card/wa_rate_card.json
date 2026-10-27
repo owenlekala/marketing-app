@@ -1,0 +1,113 @@
+{
+ "doctype": "DocType",
+ "name": "WA Rate Card",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "index_web_pages_for_search": 0,
+ "show_name_in_global_search": 0,
+ "field_order": [
+  "company",
+  "rate_card_name",
+  "currency",
+  "effective_from",
+  "effective_until",
+  "rates",
+  "source_url",
+  "reviewed_by",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "read_only": 1,
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "rate_card_name",
+   "fieldtype": "Data",
+   "label": "Rate Card Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "read_only": 1,
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "effective_until",
+   "fieldtype": "Date",
+   "label": "Effective Until",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rates",
+   "fieldtype": "Table",
+   "label": "Rates",
+   "read_only": 1,
+   "options": "WA Rate Card Row",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source_url",
+   "fieldtype": "Data",
+   "label": "Source URL",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed By",
+   "read_only": 1,
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "options": "Draft\nActive\nRetired",
+   "default": "Draft",
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
+   "role": "Marketing Manager",
+   "read": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified.",
+ "title_field": "rate_card_name"
+}

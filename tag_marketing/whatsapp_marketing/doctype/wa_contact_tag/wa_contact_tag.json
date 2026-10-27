@@ -1,0 +1,22 @@
+{
+ "doctype": "DocType",
+ "name": "WA Contact Tag",
+ "module": "WhatsApp Marketing",
+ "istable": 1,
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tag"
+ ],
+ "fields": [
+  {
+   "fieldname": "tag",
+   "fieldtype": "Link",
+   "label": "Tag",
+   "options": "WA Tag",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "permissions": []
+}
