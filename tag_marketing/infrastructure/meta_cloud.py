@@ -167,7 +167,7 @@ class MetaCloudAPI:
 		numbers = []
 		for item in data:
 			if not isinstance(item, dict) or not _valid_id(item.get("id")):
-				continue
+				raise ProviderFailure(FailureKind.INVALID_RESPONSE)
 			numbers.append(
 				ProviderNumber(
 					provider_phone_id=item["id"],
@@ -197,17 +197,28 @@ class MetaCloudAPI:
 		templates = []
 		for item in data:
 			if not isinstance(item, dict) or not _valid_id(item.get("id")):
-				continue
+				raise ProviderFailure(FailureKind.INVALID_RESPONSE)
 			components = item.get("components", [])
-			if not isinstance(components, list) or not all(isinstance(c, dict) for c in components):
-				continue
+			name = _safe_text(item.get("name"), 512)
+			language = _safe_text(item.get("language"), 64)
+			category = _safe_text(item.get("category"), 32)
+			status = _safe_text(item.get("status"), 32)
+			if (
+				not isinstance(components, list)
+				or not all(isinstance(c, dict) for c in components)
+				or not name
+				or not language
+				or not category
+				or not status
+			):
+				raise ProviderFailure(FailureKind.INVALID_RESPONSE)
 			templates.append(
 				ProviderTemplate(
 					provider_template_id=item["id"],
-					name=_safe_text(item.get("name"), 512),
-					language=_safe_text(item.get("language"), 64),
-					category=_safe_text(item.get("category"), 32),
-					status=_safe_text(item.get("status"), 32),
+					name=name,
+					language=language,
+					category=category,
+					status=status,
 					components=tuple(components),
 				)
 			)

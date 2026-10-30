@@ -18,8 +18,8 @@ CONNECTION_OPERATIONS = {
 	"validate_connection": "connections.validate_connection",
 	"sync_numbers": "connections.sync_numbers",
 	"sync_templates": "connections.sync_templates",
-	"set_enabled": "connections.set_enabled",
 }
+SET_ENABLED_OPERATION = "connections.set_enabled"
 
 
 def _roles() -> set[str]:
@@ -103,7 +103,6 @@ def enqueue_connection_operation(
 	request_id: str,
 	*,
 	expected_modified: str | None = None,
-	enabled: bool | None = None,
 ) -> dict[str, str]:
 	if operation not in CONNECTION_OPERATIONS:
 		raise CommandError("INVALID_INPUT", "operation")
@@ -115,14 +114,13 @@ def enqueue_connection_operation(
 	args: dict[str, Any] = {"connection": connection_name}
 	if operation == "validate_connection":
 		args["expected_modified"] = expected_modified
-	if operation == "set_enabled":
-		if not isinstance(enabled, bool):
-			raise CommandError("INVALID_INPUT", "enabled")
-		args.update({"enabled": enabled, "expected_modified": expected_modified})
 	request_hash = hashlib.sha256(
 		json.dumps({"operation": operation, **args}, sort_keys=True, separators=(",", ":")).encode()
 	).hexdigest()
 	operation_type = CONNECTION_OPERATIONS[operation]
+	company = _company()
+	if not frappe.db.exists("WA Connection", {"name": connection_name, "company": company}):
+		raise CommandError("NOT_FOUND")
 	prior = frappe.db.get_value(
 		"WA Operation",
 		{"requested_by": frappe.session.user, "operation_type": operation_type, "request_id": request_id},
@@ -133,18 +131,9 @@ def enqueue_connection_operation(
 		if prior.request_hash != request_hash:
 			raise CommandError("IDEMPOTENCY_CONFLICT")
 		return {"operation": prior.name}
-	company = _company()
-	if not frappe.db.exists("WA Connection", {"name": connection_name, "company": company}):
-		raise CommandError("NOT_FOUND")
 	connection = frappe.get_doc("WA Connection", connection_name)
 	if operation == "validate_connection":
 		require_revision(str(connection.modified), expected_modified)
-	if operation == "set_enabled":
-		require_revision(str(connection.modified), expected_modified)
-		if enabled and connection.status != "Disabled":
-			raise CommandError("INVALID_STATE")
-		if not enabled and connection.status == "Disabled":
-			raise CommandError("INVALID_STATE")
 	if operation == "validate_connection" and connection.status == "Disabled":
 		raise CommandError("INVALID_STATE")
 	if operation == "sync_numbers" and connection.status not in {"Ready", "Degraded"}:
@@ -197,6 +186,8 @@ def send_test(
 	"""Validate test-send intent while dispatch remains gated on the shared P4 outbox."""
 	_authorize("validate_connection")
 	company = _company()
+	if not isinstance(request_id, str) or not REQUEST_ID.fullmatch(request_id):
+		raise CommandError("INVALID_INPUT", "request_id")
 	if not all(isinstance(value, str) and value for value in (connection, sending_number, contact, template)):
 		raise CommandError("INVALID_INPUT")
 	if (
@@ -205,23 +196,80 @@ def send_test(
 		or any(not isinstance(value, (str, int, float)) or len(str(value)) > 1024 for value in sample_values)
 	):
 		raise CommandError("INVALID_INPUT", "sample_values")
-	if not frappe.db.exists(
-		"WA Sending Number", {"name": sending_number, "company": company, "connection": connection}
-	):
+	connection_state = frappe.db.get_value(
+		"WA Connection", {"name": connection, "company": company}, "status"
+	)
+	if not connection_state:
 		raise CommandError("NOT_FOUND")
-	if not frappe.db.exists(
+	if connection_state != "Ready":
+		raise CommandError("READINESS_FAILED")
+	number = frappe.db.get_value(
+		"WA Sending Number",
+		{"name": sending_number, "company": company, "connection": connection},
+		["status", "rate_per_second"],
+		as_dict=True,
+	)
+	if not number:
+		raise CommandError("NOT_FOUND")
+	if number.status != "Ready" or not number.rate_per_second or number.rate_per_second <= 0:
+		raise CommandError("READINESS_FAILED")
+	contact_state = frappe.db.get_value(
 		"WA Contact",
-		{"name": contact, "company": company, "consent_status": "Granted", "suppressed": 0, "archived": 0},
+		{"name": contact, "company": company},
+		["consent_status", "suppressed", "archived"],
+		as_dict=True,
+	)
+	if not contact_state:
+		raise CommandError("NOT_FOUND")
+	if contact_state.consent_status != "Granted" or contact_state.suppressed or contact_state.archived:
+		raise CommandError("READINESS_FAILED")
+	template_doc = frappe.db.get_value(
+		"WA Template",
+		{"name": template, "company": company, "connection": connection},
+		["status", "category", "components_json", "content_hash"],
+		as_dict=True,
+	)
+	if not template_doc:
+		raise CommandError("NOT_FOUND")
+	if (
+		template_doc.status != "Approved"
+		or template_doc.category == "Authentication"
+		or not template_doc.content_hash
 	):
 		raise CommandError("READINESS_FAILED")
-	if not frappe.db.exists(
-		"WA Template", {"name": template, "company": company, "connection": connection, "status": "Approved"}
-	):
+	try:
+		components = (
+			json.loads(template_doc.components_json)
+			if isinstance(template_doc.components_json, str)
+			else template_doc.components_json
+		)
+		canonical_components = json.dumps(
+			components, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+		)
+		actual_hash = hashlib.sha256(canonical_components.encode()).hexdigest()
+		variables = _template_variable_indexes(components)
+	except (TypeError, ValueError):
+		raise CommandError("READINESS_FAILED") from None
+	if actual_hash != template_doc.content_hash:
 		raise CommandError("READINESS_FAILED")
+	if variables != list(range(1, len(variables) + 1)) or len(sample_values) != len(variables):
+		raise CommandError("INVALID_INPUT", "sample_values")
 	# Deliberately no success response or provider call until P4 implements the shared outbox.
-	if not isinstance(request_id, str) or not REQUEST_ID.fullmatch(request_id):
-		raise CommandError("INVALID_INPUT", "request_id")
 	raise CommandError("READINESS_FAILED")
+
+
+def _template_variable_indexes(components: Any) -> list[int]:
+	indexes: set[int] = set()
+	stack = [components]
+	while stack:
+		value = stack.pop()
+		if isinstance(value, dict):
+			stack.extend(value.values())
+		elif isinstance(value, list):
+			stack.extend(value)
+		elif isinstance(value, str):
+			indexes.update(int(match) for match in re.findall(r"\{\{(\d{1,3})\}\}", value))
+	return sorted(indexes)
 
 
 def set_enabled(
@@ -240,7 +288,7 @@ def set_enabled(
 		"WA Connection", {"name": connection_name, "company": company}
 	):
 		raise CommandError("NOT_FOUND")
-	operation_type = CONNECTION_OPERATIONS["set_enabled"]
+	operation_type = SET_ENABLED_OPERATION
 	args = {"connection": connection_name, "enabled": enabled}
 	request_hash = hashlib.sha256(
 		json.dumps({"operation": "set_enabled", **args}, sort_keys=True, separators=(",", ":")).encode()

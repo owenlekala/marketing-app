@@ -12,7 +12,6 @@ The Connections sidebar destination is a small native Desk Page that shows a per
 
 - Summary columns: connection name, status, last validation, last webhook, number/template counts and safe error code. The summary API never returns credentials, app/WABA IDs, provider payloads, or generic technical diagnostics.
 - System Manager opens the standard Connection List/Form from the page. Native form tabs: Account (app/WABA IDs, explicit API version), Credentials (Password controls), Numbers, Webhook, Diagnostics.
-- Form tabs: Account (app/WABA IDs, explicit API version), Credentials (Password controls), Numbers, Webhook, Diagnostics.
 - Number details: provider ID, display name/phone, readiness, available quality/limits, configured local rate and default team.
 - Webhook panel: public integration URL, verification instructions, last valid POST timestamp; distinguish GET verification from actual event delivery.
 
@@ -38,4 +37,4 @@ Tasks: [WA-P2-001, WA-P2-002, WA-P2-003](../tasks/P2-CONNECTIONS-AND-WEBHOOKS.md
 
 - Saved credentials alone never show Ready.
 - Rotating secrets invalidates readiness; denied users cannot fetch credentials through direct API/list/export.
-- A signed test event and authorised test message are visible with safe diagnostics.
+- Connection setup acceptance covers secret protection/rotation, company-scoped access, safe health projection, persisted operation progress and provider-backed validation/catalog sync. Signed event delivery belongs to [WA-P2-003](../tasks/P2-CONNECTIONS-AND-WEBHOOKS.md#wa-p2-003); an authorised outbound test message remains gated on the shared P4 outbox and is not claimed here.

@@ -66,8 +66,6 @@ P2 may return only `{"validated":true}`, `{"enabled":true|false}` or `{"synced_c
 
 The shared server boundary maps registered domain errors to safe translated envelopes and UUID correlation IDs; HTTP status mapping stays in the API adapter, outside the domain policy. Native ValidationError within this boundary becomes a redacted INVALID_INPUT (400), with no original message log. Unexpected errors log only correlation ID and exception class, and return INTERNAL_ERROR (500) without exception text/arguments/tracebacks. A mutating boundary rolls back to its own savepoint on failure; it never commits and does not replace command-specific authorization, optimistic revision checks or durable idempotency. `require_revision` requires the exact stored revision and reports INVALID_INPUT or STALE_DOCUMENT. Authentication/permission exceptions retain Frappe's native boundary.
 
-## Foundation navigation interfaces
-
 ## Connection setup interfaces
 
 All methods require an authenticated System User, app role, configured-company scope and CSRF for POST. Mutations return a durable operation ID; provider reads run only in the `marketing` queue after commit. `request_id` is 8–128 characters from `[A-Za-z0-9._:-]`; repeating the same actor, operation and ID with the same arguments returns the existing operation, while changed arguments return `IDEMPOTENCY_CONFLICT`. `expected_modified` must equal the current connection revision for validate, disable and reconnect actions.
@@ -80,6 +78,8 @@ All methods require an authenticated System User, app role, configured-company s
 - `connections.test_send(connection, sending_number, contact, template, sample_values, request_id)` — System Manager input-validation boundary only. It checks current company, Granted consent, suppression, number and Approved template, then returns `READINESS_FAILED` until the P4 shared outbox and dispatch policy exist. It never calls Meta in P2.
 
 The system-manager form uses native Frappe controls and operation dialogs. The manager summary is a small Desk Page backed by `connections.health`; it does not confer read permission on WA Connection. An operation failure exposes only a stable safe error code and generic UI message; provider response bodies, headers and tokens are never persisted in user-visible results.
+
+## Foundation navigation interfaces
 
 WA-P1-002 supplies read-only availability adapters under `tag_marketing.api.navigation`; they do not implement the later feature commands. Native Frappe widgets require their own result shape, so these return the following objects directly inside Frappe's `message` envelope rather than the command envelope above. Authenticated GET and native-widget POST are supported; neither mutates state or accepts Guest.
 
@@ -98,14 +98,9 @@ Provider failures have safe categories: expired credential, wrong account, rejec
 
 Requests are HTTPS-only to the Graph host or the explicitly allowed Meta media host, redirects are disabled, IDs/cursors are allowlisted, bodies and responses are bounded, and media MIME type, declared size and SHA-256 are checked before bytes are returned. The transport has a 30-second maximum request deadline and performs one attempt. Its timeout/response limits do not establish Meta tenant entitlements; those remain verified at connection setup and operations time. The adapter tests use synthetic data and the network-deny fixture; no provider request has been sent.
 
-- `connections.validate_connection(connection, expected_modified, request_id)` — System Manager; starts credential/version/WABA validation, returns operation. Draft/Degraded/Disabled may move to Verifying; only completed evidence enables Ready.
-- `connections.sync_numbers(connection, request_id)` — System Manager; returns operation; upserts provider identities without overwriting configured sender rates/team.
-- `connections.sync_templates(connection, request_id)` — Manager or System Manager; returns operation; does not return credentials.
 - `connections.check_webhook(connection)` — System Manager query; returns last verified receipt, subscription diagnostic and readiness checks; never claims a missing event was received.
-- `connections.set_enabled(connection, enabled, expected_modified, request_id)` — System Manager; disabling blocks new sends but preserves authenticated event processing. Enabling requires fresh validation.
-- `connections.send_test(connection, sending_number, contact, template, sample_values, request_id)` — System Manager with contact/template scope; explicit test confirmation, authorised opted-in contact, same-company sender. Returns operation/message, never sends implicitly during credential validation.
 
-Credential edits use the restricted connection form; saving secrets invalidates connection readiness. Runtime diagnostic queries return masked metadata only.
+P2 connection commands and the intentionally blocked P4 test-send input contract are defined in [Connection setup interfaces](#connection-setup-interfaces). Credential edits use the restricted connection form; saving secrets invalidates connection readiness. Runtime diagnostic queries return masked metadata only.
 
 Template commands: `templates.validate(template, expected_modified)` returns supported-component errors and a content hash without provider mutation. `templates.submit(template, content_hash, expected_modified, request_id)` is Manager-only and returns a persisted operation for Draft/Rejected definitions; stale content fails. `templates.sync(template, request_id)` refreshes the selected template through the same provider adapter. Template sync/submit never implies approval until Meta reports it.
 

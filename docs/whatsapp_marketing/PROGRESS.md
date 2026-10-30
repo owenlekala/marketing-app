@@ -1,6 +1,6 @@
 # Progress and evidence
 
-Last baseline review: 27 October 2026. Implementation: **WA-P0-001 through WA-P0-004, WA-P1-001 through WA-P1-004, and WA-P2-001 verified; WA-P2-002 is next**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 30 October 2026. Implementation: **WA-P0-001 through WA-P0-004, WA-P1-001 through WA-P1-004, and WA-P2-001 through WA-P2-002 verified**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
@@ -44,10 +44,27 @@ Reviewed 27 October 2026 after the handbook directory was renamed:
 
 Append one entry per task: task ID; status (Not started/In progress/Blocked/Verified); app commit; runtime/site type; exact commands and results; acceptance IDs; screenshot/artifact paths; outstanding checks and next action. Use synthetic data and redact secrets. Never replace a failing result with an unsupported success claim.
 
+## Current implementation status
+
+### WA-P2-002 — Protected connection and number setup
+
+Status: **Verified** on 30 October 2026. App changes are in the working tree and are not committed. This closes WA-P2-002 only; signed webhooks, outbound test messages and production readiness remain later gates.
+
+- Implemented System Manager-only credential configuration with encrypted Password fields, immutable service-owned lifecycle/diagnostic fields, secret-rotation invalidation and field-name-only audit events. Provider-owned number metadata is read-only; local rate/team configuration remains editable.
+- Implemented company-scoped health projection, durable idempotent validation/number/template operations, Manager-only template-sync progress, actor/role/company/revision rechecks in workers, bounded catalog pagination, and disable/reconnect actions. Provider catalog updates preserve local number configuration; unknown template statuses/categories remain non-approvable.
+- Implemented the native Connections Desk Page and standard Connection Form actions. Marketing Managers see a redacted health summary and template sync only; they cannot open credential records. System Managers use the native list/form.
+- Test-send validates connection, sender, current consent/suppression/archive state, approved non-auth template, sample variables and canonical template-content hash, then returns `READINESS_FAILED` until P4's shared outbox and dispatch policy exist. No provider message was sent.
+- Runtime recovery: Docker became available; the owned Redis queue volume had an 18,211-byte malformed AOF tail. A separate named recovery volume was copied and hash-verified before Redis's standard tail repair. The idempotent project bootstrap completed two migration passes and rebuilt assets. Final `python3 development/whatsapp_marketing/runtime.py verify` passed Python 3.14.8, installed-app/revision checks, MariaDB and both Redis pings, credential isolation, web/assets, realtime, two workers, the marketing queue job and scheduler execution. The site also includes sibling apps, which were not qualified or edited by this task.
+- `python3 development/whatsapp_marketing/quality.py integration` passed **59 Frappe integration tests and 17 unit tests**. This includes all 14 connection-command cases: encrypted/rotated credentials, role boundaries, provider validation/catalog sync, safe durable progress, idempotency, revision/company rechecks, disable/reconnect and test-send gating.
+- `python3 development/whatsapp_marketing/quality.py browser --browser-grep connection` passed **6 browser cases**, with **6 expected matrix skips**, strict TypeScript checking and all **3 egress probes**. Retained evidence: `development/whatsapp_marketing/.local/test-results/browser/4611ea04ed564070a0b0b4b282091fba/`. Inspected the Manager redacted-summary and System Manager native-form screenshots; protected fields are blank.
+- `python3 development/whatsapp_marketing/quality.py lint` passed Ruff, format checks and mypy across 150 sources. `node --check` passed for both connection page/form scripts. `python3 development/whatsapp_marketing/quality.py docs` passed after this evidence update: 48 documents, 698 relative links, 72 local source references, seven Mermaid diagrams, 18 requirements, 32 tasks, 18 acceptance scenarios and zero duplicate groups/errors. `git diff --check` passed.
+- The first health probe during container startup exposed a Redis DNS race; after the owned scheduler was restarted and its verifier-created scheduled-job probe was removed, the final runtime verifier passed all checks. Browser and integration fixtures completed their scoped cleanup. No credentials, live Meta calls or outbound sends were used.
+
+Next dependency-ready task: **WA-P2-003 — authenticated durable webhook intake**. Do not claim complete signed-event delivery or outbound test-send acceptance from this connection-setup task.
+
 ## Known implementation prerequisites
 
-- Begin WA-P2-001 connection and webhook discovery using the qualified foundation; keep external provider submission disabled until its own gates pass.
-- Verify current official Meta API version/permissions/payloads; some developer pages were rate-limited during planning.
+- Revalidate the official Meta API version/permissions/payloads at release time; some developer pages were rate-limited during planning.
 - Obtain business-owned credentials, approved templates and explicitly authorised test recipients during the relevant task.
 - Configure retention policy, rate controls and operational ownership before live enablement.
 

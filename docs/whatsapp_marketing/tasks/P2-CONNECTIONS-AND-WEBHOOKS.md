@@ -22,7 +22,7 @@
 
 ## WA-P2-002
 
-- [ ] **Implement protected connection and number setup**
+- [x] **Implement protected connection and number setup**
 
 **Depends on:** `WA-P2-001`
 
@@ -35,6 +35,8 @@
 **Failure cases and verification:** Test secret rotation/readiness invalidation, safe diagnostics, stale commands, duplicate sync and unauthorised credential access. Qualify operation-specific target/result permissions before enabling producers, including permitted Manager template-sync progress without granting credential or generic technical-record access. Recheck revocation and private result-file access through the [progress contract](../API_CONTRACTS.md#operation-progress-foundation). Keep live sending disabled.
 
 **Completion evidence:** Run fake-provider integration checks and connection UI evidence; record that actual outbound test readiness depends on the complete P3/P4 eligibility/outbox slice.
+
+**Completion evidence (30 October 2026):** `quality.py integration` passed 59 Frappe integration tests and 17 unit tests; `quality.py browser --browser-grep connection` passed 6 cases, 6 expected matrix skips, strict TypeScript and all 3 egress probes; `quality.py lint` passed Ruff, formatting and mypy across 150 sources. Final disposable-site runtime verification passed database/Redis, web/assets, realtime, marketing queue and scheduler probes after a backed-up Redis AOF tail repair. Screenshot evidence and detailed scope limits are recorded in [Progress](../PROGRESS.md#wa-p2-002--protected-connection-and-number-setup). Outbound test-send remains gated by P4; P2-003 signed webhooks remain next.
 
 ## WA-P2-003
 

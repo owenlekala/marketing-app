@@ -139,7 +139,7 @@ def _actor_still_authorized(user: str, operation: str) -> bool:
 
 def _sync_numbers(api: MetaCloudAPI, connection: Any, operation: Any) -> int:
 	cursor = None
-	seen: set[str] = set()
+	seen_cursors: set[str] = set()
 	count = 0
 	for page_no in range(PAGE_CAP):
 		page = api.list_numbers(cursor=cursor, limit=100)
@@ -176,7 +176,6 @@ def _sync_numbers(api: MetaCloudAPI, connection: Any, operation: Any) -> int:
 					}
 				).db_insert()
 			count += 1
-		seen.add(item.provider_phone_id)
 		cursor = page.next_cursor
 		operation.db_set(
 			{"progress_percent": min(95, 10 + (page_no + 1) * 5), "heartbeat_at": frappe.utils.now_datetime()}
@@ -187,9 +186,9 @@ def _sync_numbers(api: MetaCloudAPI, connection: Any, operation: Any) -> int:
 				connection, "Sending Numbers Synced", {"synced_count": count}, actor=operation.requested_by
 			)
 			return count
-		if cursor in seen or cursor == operation.request_id:
+		if cursor in seen_cursors:
 			raise ProviderFailure(FailureKind.INVALID_RESPONSE)
-		seen.add(cursor)
+		seen_cursors.add(cursor)
 	# A full final page means the configured bound was reached; avoid partial success.
 	raise ProviderFailure(FailureKind.INVALID_RESPONSE)
 

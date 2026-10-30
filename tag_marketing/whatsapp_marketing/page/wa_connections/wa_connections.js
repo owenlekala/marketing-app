@@ -44,7 +44,6 @@ frappe.pages["wa-connections"].on_page_load = function (wrapper) {
 			}
 			if (!is_manager) {
 				page.set_primary_action(__("Open Connection List"), () => frappe.set_route("List", "WA Connection"), "list");
-				page.set_secondary_action(__("Validate Connection"), () => frappe.set_route("List", "WA Connection"), "refresh-cw");
 			}
 		} catch (error) {
 			tag_marketing.ui.render_state(body, { title: __("Unable to load connections"), message: error.message, action: { label: __("Retry"), run: wrapper.refresh_connections } });
