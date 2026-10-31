@@ -6,7 +6,14 @@ from uuid import uuid4
 import frappe
 
 from tag_marketing.application.connection_jobs import run_connection_operation
-from tag_marketing.application.connections import enqueue_connection_operation, send_test, set_enabled
+from tag_marketing.application.connections import (
+	connection_health,
+	connection_webhook_diagnostics,
+	enqueue_connection_operation,
+	send_test,
+	set_enabled,
+)
+from tag_marketing.application.event_recovery import _recover_connection_operations
 from tag_marketing.application.operations import get_progress
 from tag_marketing.domain.errors import CommandError
 from tag_marketing.infrastructure.meta_cloud import ProviderNumber, ProviderPage, ProviderTemplate
@@ -61,6 +68,7 @@ class TestConnectionCommands(AppIntegrationTestCase):
 		for doctype in (
 			"WA Audit Event",
 			"WA Operation",
+			"WA Webhook Event",
 			"WA Template",
 			"WA Sending Number",
 			"WA Connection",
@@ -103,6 +111,10 @@ class TestConnectionCommands(AppIntegrationTestCase):
 			operation = result["operation"]
 			progress = get_progress(operation)
 		self.assertEqual(progress["status"], "Pending")
+		self.assertEqual(
+			frappe.db.get_value("WA Operation", operation, "request_json"),
+			'{"connection":"' + self.connection.name + '"}',
+		)
 		self.assertIsNone(progress["result"])
 		self.assertIsNone(progress["result_file"])
 		self.assertFalse(frappe.get_doc("WA Connection", self.connection.name).has_permission("read"))
@@ -253,6 +265,74 @@ class TestConnectionCommands(AppIntegrationTestCase):
 		)
 		self.assertEqual(frappe.db.get_value("WA Connection", self.connection.name, "status"), "Ready")
 		self.assertTrue(frappe.db.get_value("WA Connection", self.connection.name, "last_validated_at"))
+		self.assertEqual(frappe.db.get_value("WA Operation", result["operation"], "attempt_count"), 1)
+
+	def test_recovery_reconstructs_only_allowlisted_durable_connection_operations(self):
+		from datetime import timedelta
+
+		frappe.set_user("Administrator")
+		old = frappe.utils.now_datetime() - timedelta(minutes=2)
+		operation = raw(
+			"WA Operation",
+			name=f"_wa_recovery_connection_operation_{self.run_id}",
+			company=COMPANY,
+			operation_type="connections.sync_templates",
+			requested_by=self.manager,
+			request_id=f"recovery-sync-{self.run_id}",
+			request_hash="d" * 64,
+			request_json={"connection": self.connection.name},
+			target_doctype="WA Connection",
+			target_name=self.connection.name,
+			status="Pending",
+			progress_percent=0,
+			heartbeat_at=old,
+		)
+		frappe.db.set_value("WA Operation", operation.name, "modified", old, update_modified=False)
+		with patch("tag_marketing.application.event_recovery.frappe.enqueue") as enqueue:
+			_recover_connection_operations()
+		self.assertEqual(enqueue.call_count, 1)
+		self.assertEqual(enqueue.call_args.kwargs["operation_id"], operation.name)
+		self.assertEqual(enqueue.call_args.kwargs["operation"], "sync_templates")
+		self.assertEqual(enqueue.call_args.kwargs["kwargs"], {"connection": self.connection.name})
+		self.assertTrue(enqueue.call_args.kwargs["deduplicate"])
+
+	def test_connection_webhook_projection_is_role_scoped_and_contains_only_safe_counts(self):
+		frappe.set_user("Administrator")
+		raw(
+			"WA Webhook Event",
+			name=f"_wa_health_event_{self.run_id}",
+			company=COMPANY,
+			connection=self.connection.name,
+			receipt_key=f"health-{self.run_id}",
+			raw_payload='{"private":"must not be projected"}',
+			status="Failed",
+			error_code="PROCESSING_FAILED",
+			received_at=frappe.utils.now_datetime(),
+			attempt_count=5,
+		)
+		verified_at = frappe.utils.now_datetime()
+		frappe.db.set_value(
+			"WA Connection",
+			self.connection.name,
+			"last_webhook_verified_at",
+			verified_at,
+			update_modified=False,
+		)
+		frappe.db.commit()
+		frappe.set_user(self.manager)
+		row = next(item for item in connection_health() if item["name"] == self.connection.name)
+		self.assertEqual(row["webhook_failed_count"], 1)
+		self.assertEqual(row["last_webhook_verified_at"], verified_at)
+		self.assertNotIn("raw_payload", row)
+		self.assertNotIn("waba_id", row)
+		with self.assertRaises(frappe.PermissionError):
+			connection_webhook_diagnostics(self.connection.name)
+		frappe.set_user(self.system_manager)
+		diagnostics = connection_webhook_diagnostics(self.connection.name)
+		self.assertEqual(diagnostics["subscription_diagnostic"], "Verified")
+		self.assertEqual(diagnostics["events"]["failed"], 1)
+		self.assertNotIn("receipt_key", diagnostics)
+		self.assertNotIn("raw_payload", diagnostics)
 
 	def test_test_send_rejects_invalid_input_and_is_denied_to_marketing_manager(self):
 		arguments = {

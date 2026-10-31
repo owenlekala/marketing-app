@@ -47,6 +47,7 @@ def validate_connection_record(doc: Any) -> None:
 			doc.verify_token = secrets.token_urlsafe(32)
 		doc.status = "Draft"
 		doc.last_webhook_at = None
+		doc.last_webhook_verified_at = None
 	else:
 		if not old or old.company != company or doc.company != old.company:
 			frappe.throw(
@@ -58,6 +59,7 @@ def validate_connection_record(doc: Any) -> None:
 			"status",
 			"last_validated_at",
 			"last_webhook_at",
+			"last_webhook_verified_at",
 			"last_error_code",
 			"last_error_summary",
 		):

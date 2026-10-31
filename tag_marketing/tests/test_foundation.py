@@ -142,7 +142,7 @@ class TestFoundation(AppIntegrationTestCase):
 
 	def test_generic_insert_and_set_value_cannot_bypass_managed_records(self):
 		with self.assertRaises(frappe.PermissionError):
-			insert({"doctype": "WA Tag", "company": COMPANY, "label": "Blocked"})
+			insert({"doctype": "WA Tag", "company": OTHER, "label": "Outside Company"})
 		contact = raw(
 			"WA Contact",
 			company=COMPANY,
@@ -317,7 +317,7 @@ class TestFoundation(AppIntegrationTestCase):
 		self.assertEqual(frappe.get_list("WA Tag", pluck="name"), [])
 
 	def test_native_ignore_validate_flag_does_not_disable_critical_guards(self):
-		doc = frappe.get_doc({"doctype": "WA Tag", "company": COMPANY, "label": "No bypass"})
+		doc = frappe.get_doc({"doctype": "WA Tag", "company": OTHER, "label": "No bypass"})
 		doc.flags.ignore_validate = True
 		with self.assertRaises(frappe.PermissionError):
 			doc.insert(ignore_permissions=True)

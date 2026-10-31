@@ -15,6 +15,8 @@ before_tests = "tag_marketing.tests.support.site.require_disposable_site"
 after_sync = "tag_marketing.setup.install.sync_foundation"
 after_migrate = "tag_marketing.setup.install.sync_foundation"
 
+scheduler_events = {"cron": {"* * * * *": ["tag_marketing.application.event_recovery.recover_due_work"]}}
+
 from tag_marketing.infrastructure.schema import PARENT_TYPES
 
 permission_query_conditions = {

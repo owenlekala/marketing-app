@@ -83,6 +83,7 @@ def connection_health() -> list[dict[str, Any]]:
 			"status",
 			"last_validated_at",
 			"last_webhook_at",
+			"last_webhook_verified_at",
 			"last_error_code",
 		],
 		order_by="connection_name asc",
@@ -94,7 +95,46 @@ def connection_health() -> list[dict[str, Any]]:
 		row["template_count"] = frappe.db.count(
 			"WA Template", {"company": company, "connection": row["name"]}
 		)
+		statuses = (
+			("Ready", "webhook_pending_count"),
+			("Processing", "webhook_processing_count"),
+			("Failed", "webhook_failed_count"),
+		)
+		for status, key in statuses:
+			row[key] = frappe.db.count(
+				"WA Webhook Event", {"company": company, "connection": row["name"], "status": status}
+			)
 	return rows
+
+
+def connection_webhook_diagnostics(connection_name: str) -> dict[str, Any]:
+	"""Return System Manager diagnostics without exposing payloads, IDs or credentials."""
+	_authorize("check_webhook")
+	company = _company()
+	if not isinstance(connection_name, str) or not 1 <= len(connection_name) <= 140:
+		raise CommandError("INVALID_INPUT", "connection")
+	connection = frappe.db.get_value(
+		"WA Connection",
+		{"name": connection_name, "company": company},
+		["status", "last_webhook_verified_at", "last_webhook_at", "last_error_code"],
+		as_dict=True,
+	)
+	if not connection:
+		raise CommandError("NOT_FOUND")
+	counts = {
+		status.lower(): frappe.db.count(
+			"WA Webhook Event", {"company": company, "connection": connection_name, "status": status}
+		)
+		for status in ("Ready", "Processing", "Processed", "Failed")
+	}
+	return {
+		"last_verified_at": connection.last_webhook_verified_at,
+		"last_signed_post_at": connection.last_webhook_at,
+		"subscription_diagnostic": "Verified" if connection.last_webhook_verified_at else "Not Verified",
+		"readiness": "Ready" if connection.last_webhook_verified_at else "Action Required",
+		"last_error_code": connection.last_error_code,
+		"events": counts,
+	}
 
 
 def enqueue_connection_operation(
@@ -148,6 +188,8 @@ def enqueue_connection_operation(
 			"requested_by": frappe.session.user,
 			"request_id": request_id,
 			"request_hash": request_hash,
+			"request_json": args,
+			"attempt_count": 0,
 			"status": "Pending",
 			"progress_percent": 0,
 			"target_doctype": "WA Connection",
@@ -166,6 +208,7 @@ def enqueue_connection_operation(
 		queue="marketing",
 		enqueue_after_commit=True,
 		job_id=f"wa:{operation_name}",
+		deduplicate=True,
 		operation_id=operation_name,
 		operation=operation,
 		connection_name=connection_name,
@@ -317,6 +360,8 @@ def set_enabled(
 			"requested_by": frappe.session.user,
 			"request_id": request_id,
 			"request_hash": request_hash,
+			"request_json": args,
+			"attempt_count": 0,
 			"status": "Pending" if enabled else "Succeeded",
 			"progress_percent": 0 if enabled else 100,
 			"target_doctype": "WA Connection",
@@ -336,6 +381,7 @@ def set_enabled(
 			queue="marketing",
 			enqueue_after_commit=True,
 			job_id=f"wa:{operation_name}",
+			deduplicate=True,
 			operation_id=operation_name,
 			operation="set_enabled",
 			connection_name=connection_name,

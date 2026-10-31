@@ -9,7 +9,6 @@ INBOX_TYPES = frozenset({"WA Conversation", "WA Conversation Read", "WA Conversa
 # These projections require feature-specific source/target reauthorisation, not bare DocPerms.
 DEFERRED_READ_TYPES = frozenset(
 	{
-		"WA Contact",
 		"WA Campaign",
 		"WA Campaign Snapshot",
 		"WA Campaign Recipient",
@@ -42,6 +41,10 @@ def query_conditions(user=None, doctype=None):
 		return "1=0"
 	company = frappe.db.get_single_value("WA Settings", "marketing_company")
 	if not company_allowed(company, user, doctype) or doctype in DEFERRED_READ_TYPES:
+		return "1=0"
+	if doctype == "WA Contact" and not {"Marketing User", "Marketing Manager"}.intersection(
+		frappe.get_roles(user)
+	):
 		return "1=0"
 	table = f"`tab{doctype}`"
 	conditions = [f"{table}.`company`={frappe.db.escape(company)}"]
@@ -81,11 +84,29 @@ def has_permission(doc, ptype=None, user=None, **kwargs):
 			and doc.company == company
 			and company_allowed(company, user, doc.doctype)
 		)
+	if doc.doctype == "WA Contact" and ptype == "write":
+		company = frappe.db.get_single_value("WA Settings", "marketing_company")
+		return bool(
+			doc.company == company
+			and company_allowed(company, user, doc.doctype)
+			and {"Marketing User", "Marketing Manager"}.intersection(roles)
+		)
+	if doc.doctype == "WA Tag" and ptype in {"write", "create"}:
+		company = frappe.db.get_single_value("WA Settings", "marketing_company")
+		return bool(
+			doc.company == company
+			and company_allowed(company, user, doc.doctype)
+			and {"Marketing Manager", "System Manager"}.intersection(roles)
+		)
 	if ptype not in ("read", "select") or doc.doctype in DEFERRED_READ_TYPES:
 		return False
 	company = frappe.db.get_single_value("WA Settings", "marketing_company")
 	if doc.company != company or not company_allowed(company, user, doc.doctype):
 		return False
+	if doc.doctype == "WA Contact":
+		return bool({"Marketing User", "Marketing Manager"}.intersection(roles))
+	if doc.doctype == "WA Tag":
+		return bool({"Marketing User", "Marketing Manager"}.intersection(roles))
 	if doc.doctype in INBOX_TYPES:
 		if doc.doctype == "WA Conversation Read" and doc.user != user:
 			return False

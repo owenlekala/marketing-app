@@ -62,6 +62,16 @@ def validate_record(doc: Any) -> None:
 
 		validate_number_record(doc)
 		return
+	if doc.doctype == "WA Contact":
+		from tag_marketing.application.contact_records import validate_contact
+
+		validate_contact(doc)
+		return
+	if doc.doctype == "WA Tag":
+		from tag_marketing.application.contact_records import validate_tag
+
+		validate_tag(doc)
+		return
 	validate_company_links(doc)
 	# Fail closed while feature services are absent, including Administrator/import/ignore_permissions.
 	# Feature tasks replace this gate with action-specific managed-field/state policies.
