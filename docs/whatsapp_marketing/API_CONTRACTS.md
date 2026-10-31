@@ -70,7 +70,7 @@ The shared server boundary maps registered domain errors to safe translated enve
 
 All methods require an authenticated System User, app role, configured-company scope and CSRF for POST. Mutations return a durable operation ID; provider reads run only in the `marketing` queue after commit. `request_id` is 8–128 characters from `[A-Za-z0-9._:-]`; repeating the same actor, operation and ID with the same arguments returns the existing operation, while changed arguments return `IDEMPOTENCY_CONFLICT`. `expected_modified` must equal the current connection revision for validate, disable and reconnect actions.
 
-- `connections.health()` — GET; Marketing Manager/System Manager; returns `items` with connection name, status, last validation/webhook timestamps, safe error code and number/template counts. It omits credentials and account IDs.
+- `connections.health()` — GET; Marketing Manager/System Manager; returns `items` with connection name, status, last validation, GET verification and signed POST timestamps, safe error code, number/template counts, and Ready/Processing/Failed webhook event counts. It omits credentials, account IDs, raw payloads and operation arguments.
 - `connections.validate_connection(connection, expected_modified, request_id)` — System Manager; queues WABA, number-list and template-list reads; saved credentials alone never make a connection Ready.
 - `connections.sync_numbers(connection, request_id)` — System Manager; requires Ready/Degraded and upserts provider identity while preserving local rate/team configuration. New numbers remain Unverified and provider entitlements stay unknown unless explicit provider evidence exists.
 - `connections.sync_templates(connection, request_id)` — Marketing Manager/System Manager; requires Ready/Degraded; upserts the bounded provider catalog. Unknown provider status/category is retained as Unknown and cannot satisfy approval eligibility.
@@ -98,7 +98,11 @@ Provider failures have safe categories: expired credential, wrong account, rejec
 
 Requests are HTTPS-only to the Graph host or the explicitly allowed Meta media host, redirects are disabled, IDs/cursors are allowlisted, bodies and responses are bounded, and media MIME type, declared size and SHA-256 are checked before bytes are returned. The transport has a 30-second maximum request deadline and performs one attempt. Its timeout/response limits do not establish Meta tenant entitlements; those remain verified at connection setup and operations time. The adapter tests use synthetic data and the network-deny fixture; no provider request has been sent.
 
-- `connections.check_webhook(connection)` — System Manager query; returns last verified receipt, subscription diagnostic and readiness checks; never claims a missing event was received.
+- `connections.check_webhook(connection)` — GET; System Manager only; returns `last_verified_at`, `last_signed_post_at`, `subscription_diagnostic` (`Verified`/`Not Verified`), `readiness` (`Ready`/`Action Required`), safe `last_error_code`, and `events` counts (`ready`, `processing`, `processed`, `failed`). It never claims a missing callback was received and never exposes receipt identifiers or payloads.
+
+Connection operation requests persist only bounded non-secret arguments in permission-level-2 `WA Operation.request_json`, with `attempt_count` and a stable `wa:<operation>` job ID. A one-minute scan re-enqueues old Pending records; missing/malformed snapshots fail as `RECOVERY_UNAVAILABLE`. Workers atomically claim Pending once and recheck actor, company, target and operation kind. Stale Running connection read/sync jobs are retried once, then fail with `OPERATION_INTERRUPTED`.
+
+Webhook receipt recovery uses stable `wa-webhook:<event>` IDs. Ready receipts older than one minute are re-enqueued. Interrupted Processing leases become Failed and use bounded backoff (1, 5, 15, 60 minutes; five total claims); the fifth failure remains terminal. Unknown authenticated event changes are Processed with `UNSUPPORTED_EVENT`, not retried. This is callback-event recovery only and never retries a message submission.
 
 P2 connection commands and the intentionally blocked P4 test-send input contract are defined in [Connection setup interfaces](#connection-setup-interfaces). Credential edits use the restricted connection form; saving secrets invalidates connection readiness. Runtime diagnostic queries return masked metadata only.
 
@@ -106,7 +110,9 @@ Template commands: `templates.validate(template, expected_modified)` returns sup
 
 ## Audience and consent
 
-- `audiences.source_preview(source_doctype, filters, selected_company, limit, cursor)` — Marketing User/Manager plus source read permissions; returns safe source identifiers, candidate phones and ambiguity reasons.
+- `audiences.enabled_sources()` — Marketing User/Manager; returns only System Manager-enabled, allowlisted source types.
+- `audiences.source_preview(source_doctype, search, country_code, start, page_length)` — Marketing User/Manager plus current source read permissions; returns bounded safe identifiers and valid mobile candidates. `country_code` is required for local-number interpretation; no arbitrary source filters or selected company are accepted.
+- `audiences.add_source(source_doctype, source_name, selected_phone, country_code, include_unassigned_lead)` — Marketing User/Manager; POST only. Rechecks current source and company access, selected mobile, enabled source type and explicit unassigned-Lead choice, then atomically creates/reuses `(company, phone_e164)` and appends an immutable source link. It always initializes consent to Unknown.
 - `audiences.preview(segment, exclusions, limit, cursor)` — same marketing roles; returns eligible count, excluded counts by reason, sample contacts and preview revision. Advisory only.
 - `imports.validate_batch(batch, expected_modified, request_id)` — returns operation with input hash/counts/private row-error file; no contact changes.
 - `imports.confirm_batch(batch, input_hash, expected_modified, request_id)` — requires Preview Ready and unchanged file/mapping; returns resumable import operation. Grants only when independent evidence passes validation.
@@ -170,11 +176,12 @@ Rate card draft/admin commands use the restricted native WA Rate Card form; acti
 Endpoint: `/api/method/tag_marketing.api.webhooks.receive?integration=<public_id>`.
 
 - GET accepts Meta `hub.mode`, `hub.verify_token`, `hub.challenge`; constant-time token match and supported subscription mode return raw challenge text, HTTP 200. Invalid token/mode returns 403. Never echo secrets.
-- POST verifies `X-Hub-Signature-256` using the selected connection's app secret over the exact raw bytes before trusting JSON. Reject invalid/unknown routing with 401/403; enforce body bound before parsing. Validate WABA/number ownership after verification.
-- Commit WA Webhook Event and return 200 only after durable success. Persistence failure returns 503, allowing provider retry. Valid duplicate receipt returns 200. Unknown authenticated event types are stored as processed/unsupported diagnostics rather than crashing the entire envelope.
+- POST requires `application/json`, a declared content length and a body no larger than 1 MiB; missing length returns 411, an empty declared body returns 400 and oversize returns 413. Frappe v16.53.0 parses JSON during `frappe/app.py::init_request` before whitelisted-method dispatch, omits query arguments from JSON `form_dict`, and rejects malformed JSON as HTTP 417 before the webhook handler runs. The handler reads routing only from the URL and reuses cached original body bytes for HMAC verification. The reverse proxy or ingress must enforce the same 1 MiB limit specifically for this route before forwarding so Frappe does not parse an oversized body first.
+- The handler verifies `X-Hub-Signature-256` using the selected connection's app secret over the exact cached request bytes before application-level payload interpretation. Reject invalid/unknown routing with 401/403. Validate WABA/number ownership after signature verification.
+- Every `messages` change must identify a phone number owned by the selected connection. Commit WA Webhook Event and return 200 only after durable success. Persistence failure returns 503, allowing provider retry. Valid duplicate receipt returns 200. Unknown authenticated event types are stored as processed/unsupported diagnostics rather than crashing or discarding supported siblings in the same envelope.
 - GET verification does not prove POST delivery, credentials, policy readiness or subscription permissions.
 
-No browser login is required for this boundary. Verify CSRF exemption is narrowly implemented using the framework's supported integration mechanism; retain signature checks for every POST.
+No browser login is required. The signed Guest POST is exercised through Frappe's WSGI app without cookies; no global CSRF setting is changed. Retain signature checks for every POST.
 
 ## Error catalogue
 

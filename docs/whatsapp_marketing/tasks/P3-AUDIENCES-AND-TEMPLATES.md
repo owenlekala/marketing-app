@@ -4,7 +4,7 @@
 
 ## WA-P3-001
 
-- [ ] **Implement company-scoped contacts and ERPNext projections**
+- [x] **Implement company-scoped contacts and ERPNext projections**
 
 **Depends on:** `WA-P2-004`
 
@@ -17,6 +17,8 @@
 **Failure cases and verification:** Test shared Customers, multiple phones, missing/mismatched company, source revocation, number change and concurrent duplicate inserts. Do not infer marketing consent.
 
 **Completion evidence:** Record source/schema permission tests and real native contact/list/source-selection UI evidence.
+
+**Completion evidence (30 October 2026):** Implemented company-scoped source projections and native contact/tag profile policies, with explicit E.164 selection, append-only authorised ERPNext source links, and `Unknown` consent on creation. Customer primary Contact and primary-mobile Contact Phone choices are read only after source permission checks; Lead and submitted Sales Order reads are company scoped. `quality.py integration` passed **76 Frappe integration tests and 20 unit tests**, including source permission/revocation, explicit unassigned Lead inclusion, stale company scope, Customer mobile alternatives, no consent inference and a real two-connection uniqueness race. `quality.py lint` passed Ruff, formatting and mypy across **163 sources**; `quality.py docs` passed with no broken references or duplicate groups. The browser acceptance passed in desktop light, desktop dark, tablet and mobile; mobile correctly invokes the action from Frappe's native overflow menu. Screenshots: [light source selection](../../../development/whatsapp_marketing/.local/test-results/browser/867fd80789b146008f15af692323ae80/audiences-Marketing-Manage-e271b-hrough-native-Desk-controls-desktop-light/contacts-authorised-source-selection.png), [dark linked contact](../../../development/whatsapp_marketing/.local/test-results/browser/867fd80789b146008f15af692323ae80/audiences-Marketing-Manage-e271b-hrough-native-Desk-controls-desktop-dark/contacts-source-linked-native-form.png), [tablet linked contact](../../../development/whatsapp_marketing/.local/test-results/browser/867fd80789b146008f15af692323ae80/audiences-Marketing-Manage-e271b-hrough-native-Desk-controls-tablet/contacts-source-linked-native-form.png), [mobile linked contact](../../../development/whatsapp_marketing/.local/test-results/browser/ea2dd4e1b90a4712931616e46a8b509f/audiences-Marketing-Manage-e271b-hrough-native-Desk-controls-mobile/contacts-source-linked-native-form.png). Only the WA-P3-001 portion of WA-A03/WA-A04 is closed: consent/import/suppression, full audience queries and template lifecycle remain explicitly open. No provider calls or live messaging were used.
 
 ## WA-P3-002
 

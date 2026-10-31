@@ -5,6 +5,7 @@ import frappe
 from tag_marketing.api.responses import boundary
 from tag_marketing.application.connections import (
 	connection_health,
+	connection_webhook_diagnostics,
 	enqueue_connection_operation,
 	send_test,
 )
@@ -17,6 +18,12 @@ from tag_marketing.application.connections import (
 @boundary()
 def health():
 	return {"items": connection_health()}
+
+
+@frappe.whitelist(methods=["GET"])
+@boundary()
+def check_webhook(connection: str):
+	return connection_webhook_diagnostics(connection)
 
 
 @frappe.whitelist(methods=["POST"])

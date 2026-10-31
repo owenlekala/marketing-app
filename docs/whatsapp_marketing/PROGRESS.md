@@ -1,6 +1,6 @@
 # Progress and evidence
 
-Last baseline review: 30 October 2026. Implementation: **WA-P0-001 through WA-P0-004, WA-P1-001 through WA-P1-004, and WA-P2-001 through WA-P2-002 verified**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
+Last baseline review: 30 October 2026. Implementation: **WA-P0-001 through WA-P0-004, WA-P1-001 through WA-P1-004, WA-P2-001 through WA-P2-004, and WA-P3-001 verified**. Production readiness: **Not qualified**. Live sending: **Not enabled by this work**.
 
 ## Inspected evidence
 
@@ -46,6 +46,19 @@ Append one entry per task: task ID; status (Not started/In progress/Blocked/Veri
 
 ## Current implementation status
 
+### WA-P3-001 — Company-scoped contacts and ERPNext projections
+
+Status: **Verified** on 30 October 2026. App and documentation changes are in the working tree and are not committed. This closes the contact/source-projection slice only; CSV import, consent and suppression, audience segments, templates and production readiness remain open.
+
+- Implemented permission-aware, allowlisted Lead, Customer, Contact and submitted Sales Order previews using the selected marketing company. Contact Phone primary-mobile rows are used for Customer primary Contacts; phone choice is explicit, locally formatted numbers require an explicit ISO country code, and fixed-line values are excluded. Source access and current phone availability are rechecked when linking.
+- New WA Contacts are inserted only through the source command with company + E.164 identity uniqueness, audit-attributed append-only source links, and consent `Unknown`. Existing contacts may gain additional authorised source links without altering phone identity or consent. Unassigned Leads require an explicit request flag. Native Marketing User/Manager reads and editable profile fields remain company-scoped; contact creation and tag management are server-controlled.
+- `python3 development/whatsapp_marketing/quality.py integration` passed **76 Frappe integration tests and 20 unit tests**. New cases cover permission-aware previews, restricted source fields, explicit company and unassigned-Lead handling, source changes, Customer primary Contact/mobile alternatives, duplicate-phone idempotence, no inferred consent, native role permissions, and a real two-connection duplicate insert race.
+- `python3 development/whatsapp_marketing/quality.py browser --browser-project desktop-light --browser-grep audience` passed the native Desk source flow. `python3 development/whatsapp_marketing/quality.py browser --browser-grep audience` passed desktop light, desktop dark and tablet; its initial mobile run exposed that Frappe exposes inner actions as menuitems in the mobile overflow. The test now follows that native route and `python3 development/whatsapp_marketing/quality.py browser --browser-project mobile --browser-grep audience` passed. Screenshots are retained under `development/whatsapp_marketing/.local/test-results/browser/867fd80789b146008f15af692323ae80/` (desktop/tablet) and `.../ea2dd4e1b90a4712931616e46a8b509f/` (mobile).
+- `python3 development/whatsapp_marketing/quality.py lint` passed Ruff, formatting and mypy across 163 sources. Final `python3 development/whatsapp_marketing/quality.py docs` passed with 48 Markdown files, 705 relative links, 79 local source references, 7 Mermaid diagrams, 18 requirements, 32 tasks, 18 acceptance scenarios, zero duplicate groups and zero errors. The browser gate also passed strict TypeScript checking. `git diff --check` passed.
+- Scope closes only WA-P3-001 and the source/profile portions of WA-A03/WA-A04. Consent/import/suppression and remaining P3 acceptance work are not claimed. No live ERP customer data, credentials, provider calls or outbound messages were used.
+
+Next dependency-ready task: **WA-P3-002 — resumable CSV, consent and suppression**. Production is not qualified and live sending remains disabled.
+
 ### WA-P2-002 — Protected connection and number setup
 
 Status: **Verified** on 30 October 2026. App changes are in the working tree and are not committed. This closes WA-P2-002 only; signed webhooks, outbound test messages and production readiness remain later gates.
@@ -60,7 +73,30 @@ Status: **Verified** on 30 October 2026. App changes are in the working tree and
 - `python3 development/whatsapp_marketing/quality.py lint` passed Ruff, format checks and mypy across 150 sources. `node --check` passed for both connection page/form scripts. `python3 development/whatsapp_marketing/quality.py docs` passed after this evidence update: 48 documents, 698 relative links, 72 local source references, seven Mermaid diagrams, 18 requirements, 32 tasks, 18 acceptance scenarios and zero duplicate groups/errors. `git diff --check` passed.
 - The first health probe during container startup exposed a Redis DNS race; after the owned scheduler was restarted and its verifier-created scheduled-job probe was removed, the final runtime verifier passed all checks. Browser and integration fixtures completed their scoped cleanup. No credentials, live Meta calls or outbound sends were used.
 
-Next dependency-ready task: **WA-P2-003 — authenticated durable webhook intake**. Do not claim complete signed-event delivery or outbound test-send acceptance from this connection-setup task.
+Historical next-step note for WA-P2-002: WA-P2-003. Current next task is recorded in the WA-P3-001 entry above. No production HTTPS callback, official provider payload, or live outbound test-send has been qualified.
+
+### WA-P2-003 — Authenticated durable webhook intake
+
+Status: **Verified** on 30 October 2026. This closes synthetic signed callback intake and durable event observation only; recovery operations, official Meta callback qualification, outbound sending and production release remain later gates. App changes are in the working tree and are not committed.
+
+- Added the sole Guest callback API at `/api/method/tag_marketing.api.webhooks.receive`. GET challenge responses are raw text and token-checked in constant time. POST reads the `integration` URL parameter, verifies `X-Hub-Signature-256` over exact cached request bytes and rejects unknown routing, wrong WABA/number identities, unsupported media type and oversized bodies.
+- A unique receipt is durably inserted before acknowledgement; duplicate Ready receipts are re-enqueued after commit. Worker claims are atomic. Messages and provider status observations are independently deduplicated, every envelope entry is processed, unknown sibling changes do not drop supported events, and status evidence arriving before a local accepted message remains unmatched for later correlation.
+- Sensitive raw payload remains on the System Manager-only event DocType and field permission level 2. Worker failures retain a generic `PROCESSING_FAILED` code; logs include only a receipt identifier and exception class. No message text, phone number, secret, or provider error body enters event details or diagnostics.
+- `python3 development/whatsapp_marketing/quality.py integration` passed **67 Frappe integration tests and 17 unit tests**. Eight WSGI callback tests covered exact-byte signature mismatch, challenge verification, unknown route/WABA/number, oversized and wrong media type, malformed JSON's framework response, duplicate receipt and event elements, after-commit marketing queueing, persistence failure without acknowledgement, supported siblings, early status evidence, Guest permission metadata, disabled-connection receipt and redacted worker failures.
+- `python3 development/whatsapp_marketing/quality.py lint` passed Ruff, formatting and mypy; `python3 development/whatsapp_marketing/quality.py docs` passed structural validation. The integration run used the locked disposable Frappe site and synthetic credentials; no live provider request or Meta callback occurred.
+- Before production, ingress must enforce a route-specific 1 MiB request limit before forwarding because Frappe parses JSON during request initialization, before this method executes. The app-level size check is a second boundary. Also outstanding: HTTPS reachability/route verification, official Meta payload qualification and operational retention review.
+
+### WA-P2-004 — Provider event recovery and operator diagnostics
+
+Status: **Verified** on 30 October 2026. This closes durable callback/connection-operation recovery and native safe diagnostics only; it does not establish public callback or outbound messaging readiness. App and documentation changes are in the working tree and are not committed.
+
+- Added minute-scheduled recovery for webhook Ready receipts older than one minute, stale Processing receipts and eligible durable connection operations. Atomic updates prevent two scans/workers from claiming the same item; stable job IDs deduplicate queue registrations. Redis or enqueue loss leaves durable state discoverable for the next scan.
+- Webhook attempts use 1, 5, 15 and 60-minute delays, capped at five claims; unsupported authenticated event types finish with `UNSUPPORTED_EVENT` and never poison-loop. Connection read/catalog-sync operations persist only hidden non-secret request arguments, atomically claim Pending once, and receive one recovery retry after a five-minute stale heartbeat. This service never retries outbound message submissions.
+- Health separates the last successful GET verification from the last signed POST and reports bounded Ready/Processing/Failed counts. Marketing Managers receive only the summary; `connections.check_webhook` and its native labeled diagnostic dialog are System Manager-only. No raw payload, receipt key, credentials or provider account IDs enter the projection.
+- `python3 development/whatsapp_marketing/quality.py integration` passed **71 Frappe integration tests and 17 unit tests**. New tests verify delayed/terminal retries, missing-enqueue requeue, saved operation reconstruction, claim attempts, separate callback timestamps, safe count projections and role denial. Repeated app migrations synchronized the new fields and the runtime verifier passed on the pinned Frappe/ERPNext site.
+- `python3 development/whatsapp_marketing/quality.py browser --browser-grep connection` passed **6 cases**, with **6 expected matrix skips**, strict TypeScript and all **3 egress rejection probes**. Evidence includes the [Manager safe summary](../../development/whatsapp_marketing/.local/test-results/browser/c991d858012b4a76b8057fc9bbfff60c/connections-Marketing-Mana-40ef0-ut-credential-record-access-desktop-light/connections-manager-safe-summary.png), [System Manager native form](../../development/whatsapp_marketing/.local/test-results/browser/c991d858012b4a76b8057fc9bbfff60c/connections-System-Manager-70105--with-protected-credentials-desktop-light/connections-system-manager-form.png) and [webhook diagnostics dialog](../../development/whatsapp_marketing/.local/test-results/browser/c991d858012b4a76b8057fc9bbfff60c/connections-System-Manager-70105--with-protected-credentials-desktop-light/connections-webhook-diagnostics.png).
+- `python3 development/whatsapp_marketing/quality.py lint` passed Ruff, format checks and mypy across **156 sources**. `python3 development/whatsapp_marketing/quality.py docs` passed with **48 documents, 698 relative links, 72 local source references, seven Mermaid diagrams, 18 requirements, 32 tasks, 18 acceptance scenarios and zero duplicate or consistency errors**. `git diff --check` passed.
+- No credentials, live Meta callback, outbound send, or production route qualification were used. Production prerequisites remain a pre-Frappe 1 MiB ingress limit, public HTTPS callback verification, an authorised official Meta signed callback and P7 operational approval.
 
 ## Known implementation prerequisites
 

@@ -13,7 +13,7 @@ Requirements: WA-R04, WA-R12. Source review: 27 October 2026. Schema names below
 
 ## Company and recipient selection
 
-WA Settings selects one `marketing_company`. Lead/Sales Order events with another explicit company are skipped. Shared Customer and Contact records require an administrator-enabled source type and explicit company scope; do not infer membership from a phone number or a Customer's currency. Unset Lead company requires deliberate inclusion through a marketer's source selection; automatic creation triggers skip it.
+WA Settings selects one `marketing_company`. Lead/Sales Order events with another explicit company are skipped. Shared Customer and Contact records require an administrator-enabled source type and explicit company scope; do not infer membership from a phone number or a Customer's currency. An unset Lead company requires deliberate inclusion through the source-selection checkbox; the choice is retained on the immutable source link and rechecked against the Lead. Automatic creation triggers skip it.
 
 Resolve phones in this order: explicitly selected Contact Phone, primary mobile, then mobile summary. Display multiple valid alternatives for manual choice; background events skip ambiguity with a diagnostic. Do not silently use a landline `phone` field. E.164 parsing uses the selected country (company country only as an explicit import default), and rejects unresolved/invalid numbers.
 

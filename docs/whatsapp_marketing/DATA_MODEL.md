@@ -59,6 +59,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `status` — **Select**; service-managed readiness.
 - `last_validated_at` — **Datetime**; UTC; service-managed.
 - `last_webhook_at` — **Datetime**; UTC; service-managed.
+- `last_webhook_verified_at` — **Datetime**; UTC; successful Meta GET challenge verification, distinct from signed event delivery; service-managed without changing the editable revision.
 - `last_error_code` — **Data**; redacted diagnostic code.
 - `last_error_summary` — **Small Text**; safe diagnostic only.
 
@@ -385,12 +386,12 @@ Profiles/configuration are editable by permitted users. Every field described as
 
 - `company` — **Link → Company**; required.
 - `message` — **Link → WA Message**; nullable until correlated.
-- `provider_message_id` — **Data**; required for provider status.
-- `event_type` — **Data**; provider status or reconciliation observation.
-- `occurred_at` — **Datetime**; provider timestamp UTC.
+- `provider_message_id` — **Data**; required verified Meta message ID for inbound or status observations.
+- `event_type` — **Data**; Inbound Message, Provider Status or reconciliation observation.
+- `occurred_at` — **Datetime**; provider timestamp normalised to UTC when valid, nullable when absent/invalid.
 - `received_at` — **Datetime**; server timestamp UTC.
-- `event_key` — **Data**; required canonical deduplication key.
-- `details_json` — **JSON**; minimal redacted details.
+- `event_key` — **Data**; required SHA-256 key scoped by company, event type and provider ID; inbound identity is independent of timestamp, while status observations also include status and occurrence timestamp.
+- `details_json` — **JSON**; minimal redacted message type or status/error-code fields; never message content or phone number.
 
 **Lifecycle:** Append-only; uncorrelated events retry correlation before retention cleanup.
 
@@ -514,7 +515,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 
 - `company` — **Link → Company**; required after authenticated routing.
 - `connection` — **Link → WA Connection**; required.
-- `receipt_key` — **Data**; canonical receipt digest.
+- `receipt_key` — **Data**; SHA-256 digest of integration public ID, separator and exact signed body bytes.
 - `raw_payload` — **Long Text**; bounded sensitive JSON; only after valid signature.
 - `status` — **Select**; Ready, Processing, Processed, Failed.
 - `received_at` — **Datetime**; UTC.
@@ -535,6 +536,8 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `requested_by` — **Link → User**; required.
 - `request_id` — **Data**; required client/service idempotency key.
 - `request_hash` — **Data**; required canonical command arguments hash.
+- `request_json` — **JSON**; hidden at permission level 2; bounded allowlisted non-secret command arguments required to reconstruct a lost queue job. Never contains provider credentials or payloads.
+- `attempt_count` — **Int**; worker claims; bounded retry/recovery count.
 - `status` — **Select**; Pending, Running, Succeeded, Failed, Cancelled.
 - `progress_percent` — **Percent**; 0..100.
 - `target_doctype` — **Link → DocType**; allowlisted.
@@ -544,7 +547,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `error_code` — **Data**; redacted.
 - `heartbeat_at` — **Datetime**; UTC.
 
-**Lifecycle:** Pending → Running → Succeeded / Failed / Cancelled.
+**Lifecycle:** Pending → Running → Succeeded / Failed / Cancelled. A stale interrupted connection read/sync may return to Pending for at most one recovery attempt; sends are never in this operation family.
 
 **Write ownership:** Read by requester/authorised Manager and current target scope. Permissions rechecked by worker. Idempotent repeat with different arguments returns conflict.
 
@@ -627,7 +630,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 - **WA Pilot Contact:** `contact` (Link → WA Contact, required, same company, currently opted in). Parent: WA Settings; unique contact, maximum 20; only System Manager changes while sending is disabled.
 - **WA Rate Card Row:** `country` (Link → Country, required destination market), `category` (Select Marketing/Utility/Authentication, required), `unit_price` (Currency, required nonnegative, parent currency). Parent: WA Rate Card; unique country/category per card.
 - **WA Source Type:** `source_doctype` (Link → DocType, required, allowlisted), `enabled` (Check). Parent: WA Settings; unique source type within parent.
-- **WA Source Link:** `source_doctype` (Link → DocType), `source_name` (Dynamic Link), `selected_phone` (Data), `selected_by` (Link → User), `selected_at` (Datetime). Parent: WA Contact; required company/source permission validation; no arbitrary Dynamic Links.
+- **WA Source Link:** `source_doctype` (Link → DocType), `source_name` (Dynamic Link), `selected_phone` (Data), `included_unassigned_lead` (Check), `selected_by` (Link → User), `selected_at` (Datetime). Parent: WA Contact; required company/source permission validation; no arbitrary Dynamic Links. The explicit-inclusion flag is valid only for a Lead with no ERPNext Company.
 - **WA Contact Tag:** `tag` (Link → WA Tag, required, same company). Parent: WA Contact; unique tag per parent.
 
 Automation steps live in the validated definition JSON and are edited through native controls rather than storing both a child grid and competing JSON truth. Each step has `step_id`, `action`, `parameters`, `next_step_id`, optional forward `otherwise_step_id`; trigger, purpose and condition schema are defined in [automation flow](flows/AUTOMATION_EXECUTION.md).

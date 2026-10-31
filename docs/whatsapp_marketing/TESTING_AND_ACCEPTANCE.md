@@ -72,7 +72,7 @@ Validate wrong token/WABA/version, discover multiple numbers, rotate secrets, di
 
 ### WA-A06 — Webhook authentication and replay
 
-Exercise GET token challenge and POST raw-body HMAC separately. Reject changed bytes, unknown routing and wrong WABA/number. Simulate database failure before acknowledgement; require non-200. Replay envelopes and individual elements, mixed supported/unsupported types, delayed/future timestamps and status-before-acceptance. Assert exactly one logical business effect for each unique element, without claiming provider exactly-once delivery.
+Exercise GET token challenge and POST raw-body HMAC separately. Reject changed bytes, unknown routing and wrong WABA/number. Simulate database failure before acknowledgement; require non-200. Replay envelopes and individual elements, mixed supported/unsupported types, delayed/future timestamps and status-before-acceptance. Simulate lost enqueue, interrupted Processing and repeated poison events; stable jobs recover, retries stop at five claims, and raw payloads remain outside diagnostics. Assert exactly one logical business effect for each unique element, without claiming provider exactly-once delivery.
 
 ### WA-A07 — Campaign approval and state
 
@@ -100,7 +100,7 @@ Seed known message/event fixtures, including duplicate/late statuses, tests, mis
 
 ### WA-A13 — Operational controls
 
-Stop workers/Redis/scheduler; verify queue-age and heartbeat alerts. Disable sending while work is queued: inbound processing continues, no new submission passes the live switch. Pilot scope rejects every recipient outside its explicit allowlist; Live scope rejects missing pilot evidence. Recover from database records after enqueue failure. Authentication failure degrades affected connection and alerts operators.
+Stop workers/Redis/scheduler; verify queue-age and heartbeat alerts. Disable sending while work is queued: inbound processing continues, no new submission passes the live switch. Pilot scope rejects every recipient outside its explicit allowlist; Live scope rejects missing pilot evidence. Recover receipts and safe connection operations from database records after enqueue failure; verify bounded retry and System Manager diagnostics. Authentication failure degrades affected connection and alerts operators.
 
 ### WA-A14 — Security and media
 

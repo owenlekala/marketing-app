@@ -8,6 +8,8 @@ Production uses an immutable custom image containing the tested Frappe/ERPNext r
 
 Start with one marketing worker and bounded claims; scale after measuring queue age and Meta limits. Configure worker health and scheduler heartbeat checks. Treat raw provider callbacks and files as sensitive data. TLS terminates at the approved reverse proxy; only the narrow callback is publicly unauthenticated and it always validates signatures.
 
+For `/api/method/tag_marketing.api.webhooks.receive`, configure a route-specific 1 MiB request-body limit at the public proxy/ingress before forwarding to Frappe. Preserve the exact request bytes and `X-Hub-Signature-256` header; do not rewrite, decompress or re-encode JSON. Verify the proxy rejects an oversized signed request before it reaches the site. Frappe's own request initializer parses JSON before whitelisted-method dispatch, so the app handler's 1 MiB check is a second boundary rather than protection from upstream parsing cost. Keep the callback on HTTPS and make the GET challenge and signed POST reach the same route.
+
 Do not copy the existing Compose Node websocket command blindly: inspect the installed checkout's realtime entrypoint. Development uses `bench start`; production uses supervised/container services, developer mode off and test hooks disabled.
 
 ## Before deploy
@@ -34,6 +36,8 @@ Disable affected connection/sender submissions, preserve pending records and val
 ### Queue/Redis outage
 
 Keep durable database receipts. Repair service, verify heartbeats, run recovery scan and inspect claim leases. Pre-submission claims may be reclaimed; post-Submitting work is reconciled as Unknown. Do not reset the entire outbox.
+
+P2 callback recovery runs from the Frappe scheduler every minute. Verify scheduler and marketing-queue health first; `WA Webhook Event` Ready/Processing/Failed counts and System Manager **Check Webhook** diagnostics are the supported operator view. A missing worker enqueue is recovered from the durable receipt. Failed events have at most five claims and bounded backoff; investigate terminal failures through safe event codes and correlation evidence, never by copying raw payloads into logs. Connection read/sync operations reconstruct only from their hidden non-secret request snapshot and are retried once after a stale lease. Do not replay arbitrary event payloads or connection commands from the console.
 
 ### Opt-out or template incident
 

@@ -48,9 +48,35 @@ def run_connection_operation(
 	operation_id: str, operation: str, connection_name: str, kwargs: dict[str, Any]
 ) -> None:
 	"""Execute only durable operation records; all provider work stays outside HTTP requests."""
+	frappe.db.sql(
+		"""
+		UPDATE `tabWA Operation`
+		SET status = 'Running', attempt_count = COALESCE(attempt_count, 0) + 1,
+			progress_percent = 5, heartbeat_at = NOW(), modified = NOW(), modified_by = %s
+		WHERE name = %s AND status = 'Pending'
+		""",
+		(frappe.session.user, operation_id),
+	)
+	if frappe.db.sql("SELECT ROW_COUNT()")[0][0] != 1:
+		return
+	frappe.db.commit()
 	doc = frappe.get_doc("WA Operation", operation_id)
 	connection = frappe.get_doc("WA Connection", connection_name)
-	if doc.status not in {"Pending", "Running"} or doc.target_name != connection_name:
+	if doc.status != "Running" or doc.target_name != connection_name:
+		return
+	if doc.request_json:
+		try:
+			stored_kwargs = doc.request_json
+			if isinstance(stored_kwargs, str):
+				stored_kwargs = json.loads(stored_kwargs)
+			if not isinstance(stored_kwargs, dict):
+				raise ValueError("invalid request snapshot")
+			kwargs = stored_kwargs
+		except (TypeError, ValueError):
+			_finish(doc, "Failed", error="RECOVERY_UNAVAILABLE")
+			return
+	if doc.operation_type != f"connections.{operation}":
+		_finish(doc, "Failed", error="INVALID_OPERATION")
 		return
 	if not _actor_still_authorized(doc.requested_by, operation):
 		_finish(doc, "Failed", error="NOT_AUTHORIZED")
@@ -74,8 +100,6 @@ def run_connection_operation(
 	if operation in {"sync_numbers", "sync_templates"} and connection.status not in {"Ready", "Degraded"}:
 		_finish(doc, "Failed", error="READINESS_FAILED")
 		return
-	doc.db_set({"status": "Running", "progress_percent": 5, "heartbeat_at": frappe.utils.now_datetime()})
-	frappe.db.commit()
 	try:
 		api = provider_factory(connection)
 		if operation in {"validate_connection", "set_enabled"}:
