@@ -15,8 +15,9 @@ test("Marketing Manager sees safe connection health without credential record ac
   expect(summary.message.ok).toBe(true);
   const row = summary.message.data.items[0];
   expect(Object.keys(row).sort()).toEqual([
-    "connection_name", "last_error_code", "last_validated_at", "last_webhook_at", "name", "number_count", "status", "template_count",
+    "connection_name", "last_error_code", "last_validated_at", "last_webhook_at", "last_webhook_verified_at", "name", "number_count", "status", "template_count", "webhook_failed_count", "webhook_pending_count", "webhook_processing_count",
   ].sort());
+  await expect(page.getByRole("button", { name: "Check Webhook" })).toHaveCount(0);
   expect(JSON.stringify(summary)).not.toMatch(/access_token|app_secret|verify_token|waba_id|meta_app_id/i);
   await page.screenshot({ path: info.outputPath("connections-manager-safe-summary.png"), fullPage: true });
 });
@@ -34,4 +35,11 @@ test("System Manager uses native connection form controls with protected credent
   await expect(passwords).toHaveCount(3);
   for (const input of await passwords.all()) await expect(input).toHaveValue("");
   await page.screenshot({ path: info.outputPath("connections-system-manager-form.png"), fullPage: true });
+  await page.evaluate(() => (window as any).frappe.set_route("wa-connections"));
+  const diagnostics = page.getByRole("button", { name: "Check Webhook" }).first();
+  await expect(diagnostics).toBeVisible();
+  await diagnostics.click();
+  await expect(page.getByRole("dialog", { name: "Webhook diagnostics" })).toBeVisible();
+  await expect(page.getByText("Not Verified", { exact: true })).toBeVisible();
+  await page.screenshot({ path: info.outputPath("connections-webhook-diagnostics.png"), fullPage: true });
 });

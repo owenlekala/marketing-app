@@ -24,6 +24,7 @@
   "status",
   "last_validated_at",
   "last_webhook_at",
+  "last_webhook_verified_at",
   "last_error_code",
   "last_error_summary"
  ],
@@ -128,6 +129,12 @@
    "fieldname": "last_webhook_at",
    "fieldtype": "Datetime",
    "label": "Last Webhook At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_webhook_verified_at",
+   "fieldtype": "Datetime",
+   "label": "Last Webhook Verified At",
    "read_only": 1
   },
   {

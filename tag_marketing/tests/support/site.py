@@ -16,6 +16,10 @@ USERS = {
 	"manager": ("wa-harness-manager@example.invalid", ("System Manager",)),
 	"marketing": ("wa-marketing@example.invalid", ("Marketing User",)),
 	"marketing_manager": ("wa-marketing-mgr@example.invalid", ("Marketing Manager",)),
+	"audience_manager": (
+		"wa-audience-mgr@example.invalid",
+		("Marketing Manager", "Sales User"),
+	),
 	"analyst": ("wa-analyst@example.invalid", ("Marketing Analyst",)),
 	"inbox": ("wa-inbox@example.invalid", ("WhatsApp Agent",)),
 }
@@ -91,6 +95,11 @@ def prepare_browser(run_id):
 		from tag_marketing.tests.support.progress import prepare
 
 		result["operations"] = prepare(run_id)
+		from tag_marketing.tests.support.audiences import prepare as prepare_audience
+
+		result.update(
+			prepare_audience(run_id, frappe.db.get_single_value("WA Settings", "marketing_company"))
+		)
 		result["connection"] = frappe.db.get_value(
 			"WA Operation", result["operations"]["Pending"], "target_name"
 		)
@@ -109,8 +118,10 @@ def cleanup_records(run_id):
 		if user.first_name != "WA Harness " + kind.title() or user.last_name != run_id:
 			raise RuntimeError("Refusing to delete a user not owned by this fixture run")
 		owned.append(email)
+	from tag_marketing.tests.support.audiences import cleanup as cleanup_audience
 	from tag_marketing.tests.support.progress import cleanup
 
+	cleanup_audience(run_id)
 	cleanup(run_id)
 	for email in owned:
 		frappe.delete_doc("User", email, ignore_permissions=True)

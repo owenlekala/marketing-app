@@ -9,6 +9,7 @@
   "source_doctype",
   "source_name",
   "selected_phone",
+  "included_unassigned_lead",
   "selected_by",
   "selected_at"
  ],
@@ -34,8 +35,14 @@
    "fieldtype": "Data",
    "label": "Selected Phone",
    "options": null,
-   "reqd": 0,
+   "reqd": 1,
    "in_list_view": 1
+  },
+  {
+   "fieldname": "included_unassigned_lead",
+   "fieldtype": "Check",
+   "label": "Explicitly Included Unassigned Lead",
+   "default": "0"
   },
   {
    "fieldname": "selected_by",

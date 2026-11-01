@@ -17,6 +17,8 @@
   "requested_by",
   "request_id",
   "request_hash",
+  "request_json",
+  "attempt_count",
   "status",
   "progress_percent",
   "target_doctype",
@@ -63,6 +65,23 @@
    "label": "Request Hash",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "request_json",
+   "fieldtype": "JSON",
+   "label": "Request JSON",
+   "read_only": 1,
+   "permlevel": 2,
+   "in_global_search": 0,
+   "print_hide": 1,
+   "report_hide": 1
+  },
+  {
+   "fieldname": "attempt_count",
+   "fieldtype": "Int",
+   "label": "Attempt Count",
+   "read_only": 1,
+   "default": "0"
   },
   {
    "fieldname": "status",

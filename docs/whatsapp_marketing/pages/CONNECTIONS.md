@@ -10,10 +10,10 @@ The Connections sidebar destination is a small native Desk Page that shows a per
 
 ## Layout and fields
 
-- Summary columns: connection name, status, last validation, last webhook, number/template counts and safe error code. The summary API never returns credentials, app/WABA IDs, provider payloads, or generic technical diagnostics.
+- Summary columns: connection name, status, last validation, last Meta GET verification, last signed POST, number/template counts, pending/failed event counts and safe error code. The summary API never returns credentials, app/WABA IDs, provider payloads, operation arguments, or generic technical diagnostics.
 - System Manager opens the standard Connection List/Form from the page. Native form tabs: Account (app/WABA IDs, explicit API version), Credentials (Password controls), Numbers, Webhook, Diagnostics.
 - Number details: provider ID, display name/phone, readiness, available quality/limits, configured local rate and default team.
-- Webhook panel: public integration URL, verification instructions, last valid POST timestamp; distinguish GET verification from actual event delivery.
+- Webhook panel: public integration URL, verification instructions, GET challenge timestamp and signed POST timestamp; distinguish configuration verification from actual event delivery. System Manager can open **Check Webhook** for bounded event-state counts and safe readiness diagnostics.
 
 ## Filters and data behaviour
 
@@ -33,7 +33,7 @@ WA Connection, WA Sending Number, WA Operation, WA Audit Event; `connections.*`.
 
 ## Implementation and acceptance
 
-Tasks: [WA-P2-001, WA-P2-002, WA-P2-003](../tasks/P2-CONNECTIONS-AND-WEBHOOKS.md). Scenarios: [WA-A05, WA-A06, WA-A14](../TESTING_AND_ACCEPTANCE.md).
+Tasks: [WA-P2-001, WA-P2-002, WA-P2-003, WA-P2-004](../tasks/P2-CONNECTIONS-AND-WEBHOOKS.md). Scenarios: [WA-A05, WA-A06, WA-A13, WA-A14](../TESTING_AND_ACCEPTANCE.md).
 
 - Saved credentials alone never show Ready.
 - Rotating secrets invalidates readiness; denied users cannot fetch credentials through direct API/list/export.
