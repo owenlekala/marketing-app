@@ -48,7 +48,7 @@ def prepare(run_id: str, company: str) -> dict[str, str]:
 		country="South Africa",
 		company=company,
 	)
-	return {"source": lead.name, "source_label": lead.lead_name}
+	return {"source": lead.name, "source_label": lead.lead_name, "run_id": run_id, "phone": local_phone}
 
 
 def cleanup(run_id: str) -> None:
@@ -71,6 +71,41 @@ def cleanup(run_id: str) -> None:
 	)
 	if current_sources != ["Lead"]:
 		raise RuntimeError("Enabled source types changed during the browser fixture; inspect before cleanup")
+	from tag_marketing.tests.support.site import USERS
+
+	owner = USERS["audience_manager"][0]
+	files = frappe.get_all(
+		"File",
+		filters={"file_name": ["like", f"wa-browser-import-{run_id}-%"]},
+		fields=["name", "file_name", "owner", "is_private", "attached_to_doctype", "attached_to_name"],
+	)
+	if any(file.owner != owner or file.is_private != 1 for file in files):
+		raise RuntimeError("Refusing to clean an import file not owned by the audience browser fixture")
+	batch_names = [
+		batch.name
+		for file in files
+		for batch in frappe.get_all(
+			"WA Import Batch", filters={"source_file": file.name, "requested_by": owner}, fields=["name", "company"]
+		)
+		if batch.company == metadata["company"]
+	]
+	for batch_name in batch_names:
+		batch = frappe.db.get_value("WA Import Batch", batch_name, ["source_file", "result_file"], as_dict=True)
+		if not batch or batch.source_file not in {file.name for file in files}:
+			raise RuntimeError("Refusing to remove an import batch without a run-owned source file")
+		frappe.db.delete("WA Import Row", {"batch": batch_name})
+		frappe.db.delete("WA Operation", {"target_doctype": "WA Import Batch", "target_name": batch_name, "requested_by": owner})
+		frappe.db.delete("WA Import Batch", {"name": batch_name, "requested_by": owner, "company": metadata["company"]})
+		if batch.result_file:
+			files.extend(
+				frappe.get_all("File", filters={"name": batch.result_file}, fields=["name", "file_name", "owner", "is_private", "attached_to_doctype", "attached_to_name"])
+			)
+	for file in files:
+		if file.attached_to_doctype == "WA Import Batch" and file.attached_to_name not in batch_names:
+			raise RuntimeError("Refusing to remove a file attached to a non-fixture batch")
+		path = Path(frappe.get_doc("File", file.name).get_full_path())
+		frappe.db.delete("File", {"name": file.name})
+		path.unlink(missing_ok=True)
 	contact_names = frappe.get_all(
 		"WA Contact",
 		filters={"company": metadata["company"], "phone_e164": "+27" + metadata["phone"][1:]},

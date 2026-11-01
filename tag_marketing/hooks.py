@@ -46,3 +46,11 @@ before_migrate = "tag_marketing.setup.navigation.check_navigation_ownership"
 # Native asset bundling; styles are scoped to owned content.
 app_include_js = ["tag_marketing.bundle.js"]
 app_include_css = ["tag_marketing.bundle.css"]
+
+doctype_js = {
+	"WA Contact": "tag_marketing/whatsapp_marketing/doctype/wa_contact/wa_contact.js",
+	"WA Import Batch": "tag_marketing/whatsapp_marketing/doctype/wa_import_batch/wa_import_batch.js",
+}
+doctype_list_js = {
+	"WA Contact": "tag_marketing/whatsapp_marketing/doctype/wa_contact/wa_contact_list.js",
+}

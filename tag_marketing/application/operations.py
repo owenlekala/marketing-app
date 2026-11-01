@@ -16,6 +16,8 @@ TARGETS = {
 	"connections.sync_numbers": "WA Connection",
 	"connections.sync_templates": "WA Connection",
 	"connections.set_enabled": "WA Connection",
+	"imports.validate_batch": "WA Import Batch",
+	"imports.confirm_batch": "WA Import Batch",
 }
 STATUSES = frozenset({"Pending", "Running", "Succeeded", "Failed", "Cancelled"})
 
@@ -81,6 +83,16 @@ def get_progress(operation: str) -> dict[str, Any]:
 				count = stored.get("synced_count") if isinstance(stored, dict) else None
 				if isinstance(count, int) and 0 <= count <= 100_000:
 					result = {"synced_count": count}
+			elif doc.operation_type in {"imports.validate_batch", "imports.confirm_batch"} and isinstance(
+				stored, dict
+			):
+				result = {
+					key: value
+					for key, value in stored.items()
+					if key in {"valid_count", "rejected_count", "evidence_missing_count", "imported_count"}
+					and isinstance(value, int)
+					and 0 <= value <= 100_000
+				}
 		except (TypeError, ValueError):
 			pass
 	return {

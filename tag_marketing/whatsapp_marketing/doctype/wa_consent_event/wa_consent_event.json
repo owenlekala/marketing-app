@@ -121,6 +121,11 @@
  ],
  "permissions": [
   {
+   "role": "Marketing User",
+   "read": 1,
+   "write": 0
+  },
+  {
    "role": "Marketing Manager",
    "read": 1,
    "write": 0

@@ -1,8 +1,63 @@
 frappe.listview_settings["WA Contact"] = {
 	onload(listview) {
 		listview.page.add_inner_button(__("Add ERPNext Source"), () => open_source_dialog(listview));
+		listview.page.add_inner_button(__("Import CSV"), open_csv_uploader);
 	},
 };
+
+function open_csv_uploader() {
+	new frappe.ui.FileUploader({
+		folder: "Home/Attachments",
+		allow_multiple: false,
+		make_attachments_public: false,
+		allow_toggle_private: false,
+		disable_file_browser: true,
+		restrictions: { allowed_file_types: [".csv"] },
+		dialog_title: __("Upload private contact CSV"),
+		on_success: (file) => open_import_mapping(file.name),
+	});
+}
+
+async function open_import_mapping(fileName) {
+	try {
+		const inspected = await tag_marketing.ui.request("tag_marketing.api.audiences.inspect_import_csv", { source_file: fileName });
+		const headers = inspected.columns || [];
+		const optional = ["", ...headers].join("\n");
+		const dialog = new frappe.ui.Dialog({
+			title: __("Map CSV columns"),
+			fields: [
+				{ fieldname: "phone", fieldtype: "Select", label: __("Mobile number"), options: headers.join("\n"), reqd: 1 },
+				{ fieldname: "display_name", fieldtype: "Select", label: __("Display name"), options: optional },
+				{ fieldname: "default_country_code", fieldtype: "Data", label: __("Default phone country (ISO alpha-2)"), reqd: 1 },
+				{ fieldtype: "Section Break", label: __("Optional consent evidence") },
+				{ fieldname: "consent_occurred_at", fieldtype: "Select", label: __("Consent date/time"), options: optional },
+				{ fieldname: "consent_notice_version", fieldtype: "Select", label: __("Notice version"), options: optional },
+				{ fieldname: "consent_reference", fieldtype: "Select", label: __("Evidence reference"), options: optional },
+			],
+			primary_action_label: __("Validate preview"),
+			primary_action: async (values) => {
+				const columns = { phone: values.phone };
+				if (values.display_name) columns.display_name = values.display_name;
+				for (const field of ["consent_occurred_at", "consent_notice_version", "consent_reference"]) {
+					if (values[field]) columns[field] = values[field];
+				}
+				try {
+					const result = await tag_marketing.ui.request("tag_marketing.api.audiences.create_import_batch", {
+						source_file: fileName,
+						mapping: { columns, default_country_code: values.default_country_code.toUpperCase() },
+					}, { command: true, button: dialog.get_primary_btn() });
+					dialog.hide();
+					frappe.set_route("Form", "WA Import Batch", result.batch);
+				} catch (error) {
+					tag_marketing.ui.show_error(error);
+				}
+			},
+		});
+		dialog.show();
+	} catch (error) {
+		tag_marketing.ui.show_error(error);
+	}
+}
 
 function open_source_dialog(listview) {
 	const dialog = new frappe.ui.Dialog({

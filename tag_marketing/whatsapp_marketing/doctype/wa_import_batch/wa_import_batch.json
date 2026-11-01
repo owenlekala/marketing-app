@@ -19,6 +19,7 @@
   "row_count",
   "valid_count",
   "rejected_count",
+  "evidence_missing_count",
   "result_file",
   "operation",
   "requested_by",
@@ -74,6 +75,12 @@
    "fieldname": "rejected_count",
    "fieldtype": "Int",
    "label": "Rejected Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "evidence_missing_count",
+   "fieldtype": "Int",
+   "label": "Rows Missing Consent Evidence",
    "read_only": 1
   },
   {

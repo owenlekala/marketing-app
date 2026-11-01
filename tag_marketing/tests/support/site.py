@@ -5,6 +5,7 @@ import re
 import secrets
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import frappe
 
@@ -86,7 +87,7 @@ def prepare_browser(run_id):
 	require_disposable_site()
 	validate_run_id(run_id)
 	frappe.set_user("Administrator")
-	result = {}
+	result: dict[str, Any] = {}
 	with fixture_transaction():
 		for kind in USERS:
 			password = secrets.token_urlsafe(36)

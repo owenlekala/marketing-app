@@ -12,6 +12,27 @@ from tag_marketing.application.audiences import (
 from tag_marketing.application.audiences import (
 	source_preview as preview,
 )
+from tag_marketing.application.imports import (
+	confirm_batch as confirm_import,
+)
+from tag_marketing.application.imports import (
+	consent_history as get_consent_history,
+)
+from tag_marketing.application.imports import (
+	create_batch as create_import,
+)
+from tag_marketing.application.imports import (
+	inspect_file as inspect_import_file,
+)
+from tag_marketing.application.imports import (
+	record_consent as record_contact_consent,
+)
+from tag_marketing.application.imports import (
+	set_suppression as set_contact_suppression,
+)
+from tag_marketing.application.imports import (
+	validate_batch as validate_import,
+)
 
 
 @frappe.whitelist(methods=["GET"])
@@ -44,3 +65,71 @@ def add_source(
 	if isinstance(include_unassigned_lead, str):
 		include_unassigned_lead = include_unassigned_lead.lower() in {"1", "true"}
 	return link_source(source_doctype, source_name, selected_phone, country_code, include_unassigned_lead)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def create_import_batch(source_file: str, mapping: str):
+	if isinstance(mapping, str):
+		mapping = frappe.parse_json(mapping)
+	return create_import(source_file, mapping)
+
+
+@frappe.whitelist(methods=["GET"])
+@boundary()
+def inspect_import_csv(source_file: str):
+	return inspect_import_file(source_file)
+
+
+@frappe.whitelist(methods=["GET"])
+@boundary()
+def consent_history(contact: str, start: int = 0, page_length: int = 20):
+	try:
+		start, page_length = int(start), int(page_length)
+	except (TypeError, ValueError):
+		frappe.throw(frappe._("Choose a valid page and page size."))
+	return get_consent_history(contact, start, page_length)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def validate_import_batch(batch: str, expected_modified: str, request_id: str):
+	return validate_import(batch, expected_modified, request_id)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def confirm_import_batch(batch: str, input_hash: str, expected_modified: str, request_id: str):
+	return confirm_import(batch, input_hash, expected_modified, request_id)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def record_consent(
+	contact: str,
+	event_type: str,
+	occurred_at: str,
+	source: str,
+	notice_version: str = "",
+	evidence_reference: str = "",
+	evidence_file: str | None = None,
+	request_id: str = "",
+):
+	return record_contact_consent(
+		contact,
+		event_type,
+		occurred_at,
+		source,
+		notice_version,
+		evidence_reference,
+		evidence_file,
+		request_id,
+	)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def set_suppression(contact: str, active: bool, reason: str, expected_modified: str, request_id: str):
+	if isinstance(active, str):
+		active = active.lower() in {"1", "true"}
+	return set_contact_suppression(contact, active, reason, expected_modified, request_id)

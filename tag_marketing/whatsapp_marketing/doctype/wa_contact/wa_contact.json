@@ -20,6 +20,8 @@
   "tags",
   "source_links",
   "consent_status",
+  "consent_history_section",
+  "consent_history",
   "suppressed",
   "last_inbound_at",
   "archived"
@@ -84,6 +86,17 @@
    "read_only": 1,
    "options": "Unknown\nGranted\nWithdrawn",
    "default": "Unknown"
+  },
+  {
+   "fieldname": "consent_history_section",
+   "fieldtype": "Section Break",
+   "label": "Consent and Suppression"
+  },
+  {
+   "fieldname": "consent_history",
+   "fieldtype": "HTML",
+   "label": "Consent Evidence",
+   "read_only": 1
   },
   {
    "fieldname": "suppressed",

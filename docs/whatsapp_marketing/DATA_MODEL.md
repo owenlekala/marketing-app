@@ -169,6 +169,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `row_count` — **Int**; read-only.
 - `valid_count` — **Int**; read-only.
 - `rejected_count` — **Int**; read-only.
+- `evidence_missing_count` — **Int**; read-only count of valid profiles without qualifying consent evidence; these rows remain ineligible.
 - `result_file` — **Link → File**; optional private per-row diagnostics.
 - `operation` — **Link → WA Operation**; background progress.
 - `requested_by` — **Link → User**; required initiating user.
