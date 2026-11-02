@@ -15,7 +15,14 @@ before_tests = "tag_marketing.tests.support.site.require_disposable_site"
 after_sync = "tag_marketing.setup.install.sync_foundation"
 after_migrate = "tag_marketing.setup.install.sync_foundation"
 
-scheduler_events = {"cron": {"* * * * *": ["tag_marketing.application.event_recovery.recover_due_work"]}}
+scheduler_events = {
+	"cron": {
+		"* * * * *": [
+			"tag_marketing.application.event_recovery.recover_due_work",
+			"tag_marketing.application.import_jobs.recover_import_operations",
+		]
+	}
+}
 
 from tag_marketing.infrastructure.schema import PARENT_TYPES
 

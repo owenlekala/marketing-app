@@ -24,7 +24,7 @@ flowchart TD
   Segment --> Snapshot[Campaign freezes eligible membership]
 ```
 
-Imports first validate without profile mutation. Confirmation starts a persisted operation with row-level idempotency. Unique company/phone identity prevents duplicates; a retry must not append duplicate grant evidence. Invalid rows remain private diagnostics while valid rows can complete.
+Imports first validate without profile mutation. Confirmation queues a durable operation and processes at most 100 ledger rows per committed chunk. Recovery requeues stale workers; imported row states let a retry continue after the last committed chunk without duplicate contacts or grant evidence. Unique company/phone identity prevents duplicates. Invalid rows remain private diagnostics while valid rows can complete.
 
 Withdrawal takes effect before ordinary automations and across all sending numbers. New evidence must be later than a withdrawal; a replayed historical grant does not restore permission. Coordinate withdrawal and send eligibility in short database transactions. Provider submissions already in flight cannot be recalled.
 

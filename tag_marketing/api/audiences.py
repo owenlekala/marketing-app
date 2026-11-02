@@ -69,7 +69,7 @@ def add_source(
 
 @frappe.whitelist(methods=["POST"])
 @boundary(mutates=True)
-def create_import_batch(source_file: str, mapping: str):
+def create_import_batch(source_file: str, mapping):
 	if isinstance(mapping, str):
 		mapping = frappe.parse_json(mapping)
 	return create_import(source_file, mapping)

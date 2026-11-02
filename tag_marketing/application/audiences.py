@@ -7,6 +7,7 @@ import frappe
 from frappe import _
 
 from tag_marketing.application.navigation import require_capability
+from tag_marketing.application.suppression import is_identity_suppressed
 from tag_marketing.domain.errors import CommandError
 from tag_marketing.domain.phones import to_e164
 from tag_marketing.domain.settings import SOURCES
@@ -217,6 +218,9 @@ def add_source(
 		raise CommandError("INVALID_INPUT", "selected_phone")
 	raw_phone, e164 = selected
 	assert e164
+	if is_identity_suppressed(company, e164, lock=True):
+		# Do not reveal whether an address is present in the minimised suppression set.
+		raise CommandError("READINESS_FAILED")
 	frappe.db.savepoint("wa_contact_source")
 	contact_name = frappe.db.get_value("WA Contact", {"company": company, "phone_e164": e164}, "name")
 	created = not contact_name

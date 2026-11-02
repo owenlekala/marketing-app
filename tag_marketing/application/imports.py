@@ -2,7 +2,6 @@
 
 import csv
 import hashlib
-import hmac
 import io
 import json
 from datetime import UTC, datetime, timedelta
@@ -14,7 +13,9 @@ from frappe import _
 from frappe.utils.file_manager import save_file
 
 from tag_marketing.application.audiences import _company
+from tag_marketing.application.eligibility import lock_contact_for_change
 from tag_marketing.application.navigation import require_capability
+from tag_marketing.application.suppression import digest_for_identity
 from tag_marketing.domain.errors import CommandError, require_revision
 from tag_marketing.domain.imports import csv_headers, import_hash, parse_csv, safe_csv_cell
 from tag_marketing.infrastructure.permissions import company_allowed
@@ -275,81 +276,60 @@ def confirm_batch(batch_name: str, digest: str, expected_modified: str, request_
 	batch = _authorized_batch(batch_name)
 	if not isinstance(request_id, str) or not 8 <= len(request_id) <= 128:
 		raise CommandError("INVALID_INPUT", "request_id")
-	operation, created = _begin_operation("imports.confirm_batch", batch, request_id, {"input_hash": digest})
-	if not created:
-		return {"batch": batch.name, "operation": operation.name, "status": operation.status}
-	require_revision(str(batch.modified), expected_modified)
+	if batch.input_hash != digest:
+		raise CommandError("STALE_DOCUMENT")
 	if batch.status == "Completed" and batch.input_hash == digest:
-		result = {
+		return {
+			"batch": batch.name,
+			"operation": batch.operation,
+			"status": batch.status,
 			"imported_count": frappe.db.count(
 				"WA Import Row", {"batch": batch.name, "input_hash": digest, "status": "Imported"}
-			)
+			),
+			"suppressed_count": frappe.db.count(
+				"WA Import Row", {"batch": batch.name, "input_hash": digest, "status": "Suppressed"}
+			),
 		}
-		_finish_operation(operation.name, result)
-		return {"batch": batch.name, "operation": operation.name, "status": batch.status, **result}
+	if batch.status == "Importing" and batch.operation:
+		return {"batch": batch.name, "operation": batch.operation, "status": batch.status}
+	require_revision(str(batch.modified), expected_modified)
 	content = _file_bytes(batch.source_file, batch_name=batch.name, owner=batch.requested_by)
 	try:
-		rows, current_hash = parse_csv(content, frappe.parse_json(batch.mapping_json))
+		_, current_hash = parse_csv(content, frappe.parse_json(batch.mapping_json))
 	except ValueError as exc:
 		raise CommandError("INVALID_INPUT", "mapping") from exc
 	if current_hash != digest or current_hash != batch.input_hash:
 		raise CommandError("STALE_DOCUMENT")
-	frappe.db.set_value("WA Import Batch", batch.name, "status", "Importing")
-	imported = 0
-	for row in rows:
-		if row["status"] != "Valid":
-			continue
-		ledger = frappe.db.get_value(
-			"WA Import Row",
-			{"batch": batch.name, "row_number": row["row_number"], "input_hash": digest},
-			["name", "status", "projection_json"],
-			as_dict=True,
-		)
-		if not ledger:
-			raise CommandError("PERSISTENCE_UNAVAILABLE")
-		if ledger.status == "Imported":
-			imported += 1
-			continue
-		projection = frappe.parse_json(ledger.projection_json)
-		contact_name = frappe.db.get_value(
-			"WA Contact", {"company": batch.company, "phone_e164": projection["phone_e164"]}, "name"
-		)
-		if not contact_name:
-			contact = frappe.get_doc(
-				{
-					"doctype": "WA Contact",
-					"company": batch.company,
-					"phone_e164": projection["phone_e164"],
-					"display_name": projection["display_name"],
-					"consent_status": "Unknown",
-					"suppressed": 0,
-					"archived": 0,
-				}
-			)
-			contact.flags.wa_import_command = True
-			contact.db_insert()
-			contact_name = contact.name
-		_evidence_grant(batch, contact_name, projection.get("consent_evidence"), digest, row["row_number"])
-		frappe.db.set_value(
-			"WA Import Row",
-			ledger.name,
-			{"contact": contact_name, "status": "Imported"},
-			update_modified=False,
-		)
-		imported += 1
-	frappe.db.set_value("WA Import Batch", batch.name, {"status": "Completed", "operation": operation.name})
-	_finish_operation(operation.name, {"imported_count": imported, "rejected_count": batch.rejected_count})
+	operation, created = _begin_operation(
+		"imports.confirm_batch", batch, request_id, {"input_hash": digest}, status="Pending"
+	)
+	if not created:
+		return {"batch": batch.name, "operation": operation.name, "status": operation.status}
+	frappe.db.set_value("WA Import Batch", batch.name, {"status": "Importing", "operation": operation.name})
+	frappe.enqueue(
+		"tag_marketing.application.import_jobs.run_import_operation",
+		queue="marketing",
+		timeout=3600,
+		enqueue_after_commit=True,
+		job_id=f"wa-import:{operation.name}",
+		deduplicate=True,
+		operation_id=operation.name,
+	)
 	return {
 		"batch": batch.name,
 		"operation": operation.name,
-		"status": "Completed",
-		"imported_count": imported,
+		"status": "Importing",
 		"rejected_count": batch.rejected_count,
 	}
 
 
 def _begin_operation(
-	operation_type: str, batch: Any, request_id: str, request: dict[str, Any]
+	operation_type: str,
+	batch: Any,
+	request_id: str,
+	request: dict[str, Any],
+	*,
+	status: str = "Running",
 ) -> tuple[Any, bool]:
 	request_hash = hashlib.sha256(
 		json.dumps(
@@ -378,8 +358,8 @@ def _begin_operation(
 			"request_hash": request_hash,
 			"request_json": json.dumps(request, sort_keys=True),
 			"attempt_count": 0,
-			"status": "Running",
-			"progress_percent": 5,
+			"status": status,
+			"progress_percent": 0 if status == "Pending" else 5,
 			"target_doctype": "WA Import Batch",
 			"target_name": batch.name,
 			"heartbeat_at": _now(),
@@ -506,8 +486,8 @@ def _record_event(
 	evidence_file: str | None,
 	key: str,
 ) -> dict[str, Any]:
-	# Contact row lock is the common serialization point required by P4 send reservations.
-	frappe.db.sql("SELECT name FROM `tabWA Contact` WHERE name=%s FOR UPDATE", contact.name)
+	# Shared with P4 reservations so a committed withdrawal closes the send gate.
+	lock_contact_for_change(contact.company, contact.name)
 	if frappe.db.exists("WA Consent Event", {"source_event_key": key}):
 		prior = frappe.db.get_value(
 			"WA Consent Event",
@@ -630,9 +610,9 @@ def set_suppression(
 	if prior:
 		return {"contact": contact.name, "suppressed": active, "audit_id": prior[0][0], "replayed": True}
 	require_revision(str(contact.modified), expected_modified)
+	lock_contact_for_change(contact.company, contact.name)
 	if not active and reason == "Opt Out" and _effective(contact.name) != "Granted":
 		raise CommandError("READINESS_FAILED")
-	frappe.db.sql("SELECT name FROM `tabWA Contact` WHERE name=%s FOR UPDATE", contact.name)
 	_suppress(contact, reason, None, active=active)
 	frappe.db.set_value("WA Contact", contact.name, {"suppressed": int(active)}, update_modified=False)
 	audit_id = _audit(
@@ -649,13 +629,7 @@ def _suppress(contact: Any, reason: str, event_name: str | None, active: bool = 
 		{"company": contact.company, "contact": contact.name, "purpose": "Marketing"},
 		"name",
 	)
-	settings = frappe.get_doc("WA Settings")
-	key = settings.get_password("suppression_hmac_key") if settings.suppression_hmac_key else ""
-	if not key:
-		raise CommandError("PERSISTENCE_UNAVAILABLE")
-	identity_digest = hmac.new(
-		key.encode(), f"{contact.company}|{contact.phone_e164}".encode(), hashlib.sha256
-	).hexdigest()
+	identity_digest = digest_for_identity(contact.company, contact.phone_e164)
 	values = {
 		"reason": reason,
 		"active": int(active),
@@ -692,6 +666,7 @@ def _authorized_batch(name: str) -> Any:
 			"modified",
 			"requested_by",
 			"input_hash",
+			"operation",
 			"valid_count",
 			"rejected_count",
 			"evidence_missing_count",
