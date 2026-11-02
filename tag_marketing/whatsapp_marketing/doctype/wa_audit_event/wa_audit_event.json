@@ -20,7 +20,9 @@
   "occurred_at",
   "before_hash",
   "after_hash",
-  "details_json"
+  "details_json",
+  "idempotency_key",
+  "request_hash"
  ],
  "fields": [
   {
@@ -86,6 +88,19 @@
    "label": "Details JSON",
    "read_only": 1,
    "in_global_search": 0
+  },
+  {
+   "fieldname": "idempotency_key",
+   "fieldtype": "Data",
+   "label": "Idempotency Key",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "request_hash",
+   "fieldtype": "Data",
+   "label": "Request Hash",
+   "read_only": 1
   }
  ],
  "permissions": [

@@ -3,6 +3,9 @@ from tag_marketing.tests.support.cases import OfflineTestCase
 
 
 class TestRevisionPolicy(OfflineTestCase):
+	def test_audience_limit_has_a_stable_application_error(self) -> None:
+		self.assertEqual(CommandError("AUDIENCE_TOO_LARGE").code, "AUDIENCE_TOO_LARGE")
+
 	def test_only_exact_revision_is_accepted(self) -> None:
 		require_revision("2026-10-27 10:00:00.123456", "2026-10-27 10:00:00.123456")
 		for value, code in (

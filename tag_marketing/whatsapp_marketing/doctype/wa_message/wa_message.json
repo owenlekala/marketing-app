@@ -14,6 +14,9 @@
  "field_order": [
   "company",
   "conversation",
+  "contact",
+  "sending_number",
+  "recipient_phone",
   "direction",
   "purpose",
   "body_text",
@@ -50,8 +53,27 @@
    "fieldtype": "Link",
    "label": "Conversation",
    "read_only": 1,
-   "options": "WA Conversation",
-   "reqd": 1
+   "options": "WA Conversation"
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "read_only": 1,
+   "options": "WA Contact"
+  },
+  {
+   "fieldname": "sending_number",
+   "fieldtype": "Link",
+   "label": "Sending Number",
+   "read_only": 1,
+   "options": "WA Sending Number"
+  },
+  {
+   "fieldname": "recipient_phone",
+   "fieldtype": "Data",
+   "label": "Recipient Phone",
+   "read_only": 1
   },
   {
    "fieldname": "direction",

@@ -52,7 +52,8 @@ def prepare(run_id):
 		name="wa-progress-connection-" + run_id,
 		company=company,
 		connection_name="WA Harness " + run_id,
-		status="Draft",
+		# A fixture-only ready connection exposes the native template draft flow.
+		status="Ready",
 	)
 	result = {}
 	for state in STATES:
@@ -110,6 +111,19 @@ def cleanup(run_id):
 	)
 	if connection and (connection.company != company or connection.connection_name != "WA Harness " + run_id):
 		raise RuntimeError("Refusing to delete an unrelated connection")
+	templates = frappe.get_all(
+		"WA Template",
+		filters={"connection": connection_name},
+		fields=["name", "company", "template_name"],
+	)
+	for template in templates:
+		if template.company != company or not template.template_name.startswith(
+			"wa_browser_template_" + run_id + "_"
+		):
+			raise RuntimeError("Refusing to delete a template not owned by this browser fixture")
+		frappe.db.delete("WA Template Revision", {"template": template.name})
+		frappe.db.delete("WA Operation", {"target_doctype": "WA Template", "target_name": template.name})
+		frappe.db.delete("WA Template", {"name": template.name})
 	# Lock the exact setting before compare-and-restore; never overwrite another editor's change.
 	current_company = locked_company()
 	owned_company = metadata["changed"] and frappe.db.exists("Company", company)

@@ -71,6 +71,17 @@ def cleanup(run_id: str) -> None:
 	)
 	if current_sources != ["Lead"]:
 		raise RuntimeError("Enabled source types changed during the browser fixture; inspect before cleanup")
+	segments = frappe.get_all(
+		"WA Audience Segment",
+		filters={"company": metadata["company"], "segment_name": ["like", f"Browser Segment {run_id} %"]},
+		fields=["name", "company", "segment_name"],
+	)
+	for segment in segments:
+		if segment.company != metadata["company"] or not segment.segment_name.startswith(
+			"Browser Segment " + run_id + " "
+		):
+			raise RuntimeError("Refusing to delete an audience segment not owned by this browser run")
+		frappe.db.delete("WA Audience Segment", {"name": segment.name})
 	from tag_marketing.tests.support.site import user_email
 
 	owner = user_email("audience_manager", run_id)
