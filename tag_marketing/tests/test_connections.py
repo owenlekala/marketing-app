@@ -1,7 +1,8 @@
 """P2 connection service tests against the migrated disposable Frappe site."""
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from uuid import uuid4
+from datetime import UTC, datetime
 
 import frappe
 
@@ -14,9 +15,18 @@ from tag_marketing.application.connections import (
 	set_enabled,
 )
 from tag_marketing.application.event_recovery import _recover_connection_operations
+from tag_marketing.application.imports import record_consent
 from tag_marketing.application.operations import get_progress
+from tag_marketing.application.outbox import process_outbox_item, reconcile_unknown
 from tag_marketing.domain.errors import CommandError
-from tag_marketing.infrastructure.meta_cloud import ProviderNumber, ProviderPage, ProviderTemplate
+from tag_marketing.infrastructure.meta_cloud import (
+	FailureKind,
+	MessageAcceptance,
+	ProviderFailure,
+	ProviderNumber,
+	ProviderPage,
+	ProviderTemplate,
+)
 from tag_marketing.tests.support.integration import AppIntegrationTestCase
 from tag_marketing.tests.support.persistence import raw
 
@@ -29,6 +39,7 @@ class TestConnectionCommands(AppIntegrationTestCase):
 		frappe.set_user("Administrator")
 		self.run_id = uuid4().hex
 		self.previous_marketing_company = frappe.db.get_single_value("WA Settings", "marketing_company")
+		self.previous_company_rate = frappe.db.get_single_value("WA Settings", "company_rate_per_second")
 		if not frappe.db.exists("Company", COMPANY):
 			frappe.get_doc(
 				{
@@ -65,12 +76,19 @@ class TestConnectionCommands(AppIntegrationTestCase):
 		frappe.db.rollback()
 		frappe.set_user("Administrator")
 		frappe.db.set_single_value("WA Settings", "marketing_company", self.previous_marketing_company)
+		frappe.db.set_single_value("WA Settings", "company_rate_per_second", self.previous_company_rate)
 		for doctype in (
+			"WA Send Reservation",
+			"WA Message Attempt",
+			"WA Outbox Item",
+			"WA Message",
+			"WA Consent Event",
 			"WA Audit Event",
 			"WA Operation",
 			"WA Webhook Event",
 			"WA Template",
 			"WA Sending Number",
+			"WA Contact",
 			"WA Connection",
 		):
 			frappe.db.delete(doctype, {"company": COMPANY})
@@ -350,6 +368,249 @@ class TestConnectionCommands(AppIntegrationTestCase):
 		with self.assertRaises(CommandError) as context:
 			send_test(**arguments)
 		self.assertEqual(context.exception.code, "INVALID_INPUT")
+
+	def _prepare_test_send(self):
+		import json
+
+		frappe.db.set_single_value("WA Settings", "company_rate_per_second", 2)
+		contact = raw(
+			"WA Contact",
+			company=COMPANY,
+			phone_e164="+2782" + self.run_id[:7],
+			display_name="Synthetic Test Contact",
+			consent_status="Granted",
+			suppressed=0,
+			archived=0,
+		)
+		self._grant_test_contact(contact.name)
+		number = raw(
+			"WA Sending Number",
+			company=COMPANY,
+			connection=self.connection.name,
+			provider_phone_id=self.phone_id,
+			display_phone="+27110000000",
+			status="Ready",
+			rate_per_second=2,
+		)
+		components = [{"type": "BODY", "text": "Hello {{1}}"}]
+		from tag_marketing.domain.templates import content_hash
+
+		template = raw(
+			"WA Template",
+			company=COMPANY,
+			connection=self.connection.name,
+			provider_template_id=self.template_id,
+			template_name="test_template_" + self.run_id[:8],
+			language_code="en",
+			category="Marketing",
+			components_json=json.dumps(components),
+			content_hash=content_hash("test_template_" + self.run_id[:8], "en", "Marketing", components),
+			status="Approved",
+			revision_number=1,
+		)
+		return contact, number, template
+
+	def _grant_test_contact(self, contact_name):
+		frappe.set_user(self.manager)
+		record_consent(
+			contact_name,
+			"Granted",
+			datetime.now(UTC).isoformat(),
+			"Web Form",
+			"synthetic-test-notice-v1",
+			"synthetic-test-evidence",
+			request_id="test-consent-" + self.run_id + contact_name,
+		)
+		frappe.set_user(self.system_manager)
+
+	def test_explicit_test_send_uses_durable_outbox_and_reconciles_unknown_without_resend(self):
+		contact, number, template = self._prepare_test_send()
+		frappe.set_user(self.system_manager)
+		request_id = "test-send-" + self.run_id
+		with patch("frappe.enqueue") as enqueue:
+			queued = send_test(
+				connection=self.connection.name,
+				sending_number=number.name,
+				contact=contact.name,
+				template=template.name,
+				sample_values=["Synthetic"],
+				request_id=request_id,
+			)
+			self.assertEqual(queued["status"], "Queued")
+			self.assertEqual(enqueue.call_args.kwargs["queue"], "marketing")
+			self.assertTrue(enqueue.call_args.kwargs["enqueue_after_commit"])
+			self.assertEqual(
+				send_test(
+					connection=self.connection.name,
+					sending_number=number.name,
+					contact=contact.name,
+					template=template.name,
+					sample_values=["Synthetic"],
+					request_id=request_id,
+				),
+				queued,
+			)
+			with self.assertRaises(CommandError) as conflict:
+				send_test(
+					connection=self.connection.name,
+					sending_number=number.name,
+					contact=contact.name,
+					template=template.name,
+					sample_values=["Changed"],
+					request_id=request_id,
+				)
+			self.assertEqual(conflict.exception.code, "IDEMPOTENCY_CONFLICT")
+
+		accepted_contact = raw(
+			"WA Contact",
+			company=COMPANY,
+			phone_e164="+2782" + self.run_id[7:14],
+			display_name="Synthetic Accepted Contact",
+			consent_status="Granted",
+			suppressed=0,
+			archived=0,
+		)
+		self._grant_test_contact(accepted_contact.name)
+		with patch("frappe.enqueue"):
+			accepted = send_test(
+				connection=self.connection.name,
+				sending_number=number.name,
+				contact=accepted_contact.name,
+				template=template.name,
+				sample_values=["Accepted"],
+				request_id="accepted-" + self.run_id,
+			)
+		accepted_outbox = frappe.db.get_value("WA Outbox Item", {"message": accepted["message"]}, "name")
+		due_at = frappe.db.get_value("WA Outbox Item", accepted_outbox, "due_at")
+		self.assertLessEqual(due_at, frappe.utils.now_datetime())
+		provider_acceptance = MessageAcceptance("wamid." + self.run_id[:16])
+		fake_provider = Mock()
+		fake_provider.submit_message.return_value = provider_acceptance
+
+		with patch(
+			"tag_marketing.application.outbox.provider_factory",
+			return_value=fake_provider,
+		):
+			process_outbox_item(accepted_outbox)
+		fake_provider.submit_message.assert_called_once()
+		final_outbox = frappe.db.get_value(
+			"WA Outbox Item",
+			accepted_outbox,
+			["status", "last_error_code", "due_at", "next_retry_at", "attempt_count"],
+			as_dict=True,
+		)
+		self.assertEqual(
+			(final_outbox.status, final_outbox.last_error_code),
+			("Done", None),
+			f"outbox={final_outbox}",
+		)
+		self.assertEqual(frappe.db.get_value("WA Message", accepted["message"], "status"), "Accepted")
+		self.assertEqual(frappe.db.get_value("WA Outbox Item", accepted_outbox, "status"), "Done")
+		self.assertEqual(
+			frappe.db.get_value("WA Send Reservation", {"message": accepted["message"]}, "state"),
+			"Retained",
+		)
+
+		outbox = frappe.db.get_value("WA Outbox Item", {"message": queued["message"]}, "name")
+		with patch(
+			"tag_marketing.application.outbox.provider_factory",
+			return_value=type(
+				"FakeProvider",
+				(),
+				{
+					"submit_message": lambda _self, _number, _payload: (_ for _ in ()).throw(
+						ProviderFailure(FailureKind.UNKNOWN_OUTCOME)
+					)
+				},
+			)(),
+		):
+			process_outbox_item(outbox)
+		self.assertEqual(frappe.db.get_value("WA Message", queued["message"], "status"), "Unknown")
+		self.assertEqual(frappe.db.get_value("WA Outbox Item", outbox, "status"), "Unknown")
+		self.assertEqual(
+			frappe.db.get_value("WA Send Reservation", {"message": queued["message"]}, "state"),
+			"Retained",
+		)
+		message_doc = frappe.get_doc("WA Message", queued["message"])
+		leave = reconcile_unknown(
+			message_doc.name,
+			"Leave Unknown",
+			evidence_reference="Awaiting provider evidence",
+			expected_modified=str(message_doc.modified),
+			request_id="reconcile-leave-" + self.run_id,
+		)
+		self.assertEqual(leave["status"], "Unknown")
+		result = reconcile_unknown(
+			message_doc.name,
+			"Accepted With Evidence",
+			evidence_reference="Synthetic provider trace",
+			expected_modified=str(message_doc.modified),
+			request_id="reconcile-" + self.run_id,
+			provider_message_id="wamid.reconciled." + self.run_id[:12],
+		)
+		self.assertEqual(result["status"], "Accepted")
+		self.assertEqual(frappe.db.get_value("WA Outbox Item", outbox, "status"), "Done")
+		self.assertEqual(
+			frappe.db.get_value("WA Send Reservation", {"message": queued["message"]}, "state"),
+			"Retained",
+		)
+		self.assertEqual(
+			reconcile_unknown(
+				message_doc.name,
+				"Accepted With Evidence",
+				evidence_reference="Synthetic provider trace",
+				expected_modified=str(message_doc.modified),
+				request_id="reconcile-" + self.run_id,
+				provider_message_id="wamid.reconciled." + self.run_id[:12],
+			),
+			result,
+		)
+
+	def test_proven_non_submission_releases_reservation_and_never_resends(self):
+		contact, number, template = self._prepare_test_send()
+		frappe.set_user(self.system_manager)
+		with patch("frappe.enqueue"):
+			queued = send_test(
+				connection=self.connection.name,
+				sending_number=number.name,
+				contact=contact.name,
+				template=template.name,
+				sample_values=["No submit"],
+				request_id="not-submitted-" + self.run_id,
+			)
+		outbox = frappe.db.get_value("WA Outbox Item", {"message": queued["message"]}, "name")
+		with patch(
+			"tag_marketing.application.outbox.provider_factory",
+			return_value=type(
+				"FakeProvider",
+				(),
+				{
+					"submit_message": lambda _self, _number, _payload: (_ for _ in ()).throw(
+						ProviderFailure(FailureKind.UNKNOWN_OUTCOME)
+					)
+				},
+			)(),
+		):
+			process_outbox_item(outbox)
+		message = frappe.get_doc("WA Message", queued["message"])
+		resolved = reconcile_unknown(
+			message.name,
+			"Not Submitted With Evidence",
+			evidence_reference="Synthetic no-acceptance evidence",
+			expected_modified=str(message.modified),
+			request_id="reconcile-not-submitted-" + self.run_id,
+		)
+		self.assertEqual(resolved["status"], "Failed")
+		self.assertEqual(frappe.db.get_value("WA Outbox Item", outbox, "status"), "Failed")
+		self.assertEqual(
+			frappe.db.get_value("WA Send Reservation", {"message": queued["message"]}, "state"),
+			"Released",
+		)
+		with patch("frappe.enqueue") as enqueue:
+			from tag_marketing.application.outbox import recover_outbox
+
+			recover_outbox()
+		self.assertFalse(enqueue.called)
 
 	def test_manager_cannot_read_validation_operation_for_hidden_connection(self):
 		frappe.set_user(self.system_manager)

@@ -1,14 +1,30 @@
 """P3 source projections enforce current ERPNext access and phone identity rules."""
 
+import tracemalloc
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
 from threading import Barrier
+from unittest.mock import patch
 from uuid import uuid4
 
 import frappe
 
+from tag_marketing.application.audience_preview_jobs import (
+	recover_audience_preview_operations,
+	run_audience_preview_operation,
+)
+from tag_marketing.application.audience_segments import (
+	iterate_snapshot_recipients,
+	request_preview,
+	save_segment,
+	set_segment_disabled,
+)
+from tag_marketing.application.audience_segments import preview as preview_segment
 from tag_marketing.application.audiences import add_source, source_preview
+from tag_marketing.application.operations import get_progress
 from tag_marketing.application.suppression import digest_for_identity
 from tag_marketing.domain.errors import CommandError
+from tag_marketing.infrastructure.audience_repository import count_candidates
 from tag_marketing.tests.support.integration import AppIntegrationTestCase
 from tag_marketing.tests.support.persistence import raw
 
@@ -23,6 +39,9 @@ class TestAudienceSources(AppIntegrationTestCase):
 		self.run_id = uuid4().hex[:12]
 		self.created_companies = []
 		self.created_users = []
+		self.created_segments = []
+		self.created_operations = []
+		self.created_contacts = []
 		for name, abbr in ((COMPANY, "WAA"), (OTHER, "WAB")):
 			if not frappe.db.exists("Company", name):
 				raw(
@@ -103,6 +122,14 @@ class TestAudienceSources(AppIntegrationTestCase):
 			frappe.db.delete("WA Contact", {"name": contact_name})
 		if getattr(self, "tag_name", None):
 			frappe.db.delete("WA Tag", {"name": self.tag_name})
+		for segment in self.created_segments:
+			frappe.db.delete("WA Audience Segment", {"name": segment})
+		for operation in self.created_operations:
+			frappe.db.delete("WA Operation", {"name": operation})
+		for contact_name in self.created_contacts:
+			frappe.db.delete("WA Contact Tag", {"parent": contact_name})
+			frappe.db.delete("WA Source Link", {"parent": contact_name})
+			frappe.db.delete("WA Contact", {"name": contact_name})
 		if lead_names:
 			frappe.db.delete("Lead", {"name": ["in", lead_names]})
 		for user in self.created_users:
@@ -291,3 +318,210 @@ class TestAudienceSources(AppIntegrationTestCase):
 			with self.assertRaises(frappe.PermissionError):
 				frappe.get_list("WA Contact", pluck="name")
 			self.assertFalse(frappe.has_permission("WA Contact", "read", doc=contact_name))
+
+	def test_segment_preview_reconciles_eligibility_and_rechecks_live_source_access(self):
+		frappe.set_user(self.manager)
+		linked = add_source("Lead", self.lead.name, self.phone, "ZA")["contact"]
+		self.created_contacts.append(linked)
+		frappe.db.set_value("WA Contact", linked, "consent_status", "Granted")
+		for index, consent, suppressed, archived in (
+			(1, "Granted", 1, 0),
+			(2, "Granted", 0, 1),
+			(3, "Withdrawn", 0, 0),
+			(4, "Unknown", 0, 0),
+		):
+			contact = raw(
+				"WA Contact",
+				company=COMPANY,
+				phone_e164=f"+2782{index:07d}",
+				display_name=f"Audience exclusion {index}",
+				consent_status=consent,
+				suppressed=suppressed,
+				archived=archived,
+			)
+			self.created_contacts.append(contact.name)
+			raw(
+				"WA Source Link",
+				parent=contact.name,
+				parenttype="WA Contact",
+				parentfield="source_links",
+				source_doctype="Lead",
+				source_name=self.lead.name,
+				selected_phone=self.phone,
+				selected_by=self.manager,
+				selected_at=frappe.utils.now_datetime(),
+			)
+		with self.assertRaises(CommandError) as invalid_filter:
+			save_segment(
+				f"Invalid {self.run_id}",
+				{
+					"version": 1,
+					"logic": "and",
+					"rules": [{"field": "phone_e164", "operator": "equals", "value": self.phone}],
+					"groups": [],
+				},
+			)
+		self.assertEqual(invalid_filter.exception.code, "INVALID_FILTER")
+		segment = save_segment(
+			f"Segment {self.run_id}",
+			{
+				"version": 1,
+				"logic": "and",
+				"rules": [
+					{"field": "source_type", "operator": "equals", "value": "Lead"},
+					{"field": "Lead.country", "operator": "equals", "value": "South Africa"},
+				],
+				"groups": [],
+			},
+		)
+		self.created_segments.append(segment["name"])
+		disabled = set_segment_disabled(segment["name"], True, segment["modified"])
+		with self.assertRaises(CommandError):
+			preview_segment(segment["name"], limit=1)
+		set_segment_disabled(segment["name"], False, disabled["modified"])
+		preview = preview_segment(segment["name"], limit=1)
+		self.assertEqual(preview["matched_count"], 5)
+		self.assertEqual(preview["eligible_count"], 1)
+		self.assertEqual([item["name"] for item in preview["items"]], [linked])
+		self.assertEqual(
+			preview["excluded"], {"suppressed": 1, "archived": 1, "withdrawn": 1, "unknown_consent": 1}
+		)
+		limited_manager = self.user("Marketing Manager")
+		frappe.set_user(limited_manager)
+		denied_preview = preview_segment(segment["name"], limit=1)
+		self.assertEqual(denied_preview["matched_count"], 0)
+		self.assertEqual(denied_preview["eligible_count"], 0)
+
+	def test_large_preview_is_durable_idempotent_and_exposes_only_safe_progress(self):
+		self._durable_audience_test = True
+		frappe.set_user(self.manager)
+		segment = save_segment(
+			f"Async segment {self.run_id}",
+			{"version": 1, "logic": "and", "rules": [], "groups": []},
+		)
+		self.created_segments.append(segment["name"])
+		request_id = f"audience-preview-{self.run_id}"
+		with (
+			patch("tag_marketing.infrastructure.audience_repository.count_candidates", return_value=2_001),
+			patch("tag_marketing.application.audience_segments.frappe.enqueue") as enqueue,
+		):
+			first = request_preview(segment["name"], {}, 20, "", request_id)
+			replay = request_preview(segment["name"], {}, 20, "", request_id)
+			enqueue.assert_called_once()
+		self.assertEqual(first, replay)
+		self.created_operations.append(first["operation"])
+		self.assertEqual(first["status"], "Pending")
+		self.assertEqual(frappe.db.get_value("WA Operation", first["operation"], "status"), "Pending")
+		progress = get_progress(first["operation"])
+		self.assertEqual(progress["status"], "Pending")
+		self.assertIsNone(progress["result"])
+		frappe.db.set_value(
+			"WA Operation",
+			first["operation"],
+			{"modified": datetime.now(UTC) - timedelta(minutes=2)},
+			update_modified=False,
+		)
+		frappe.db.commit()
+		with patch("tag_marketing.application.audience_preview_jobs.frappe.enqueue") as enqueue:
+			recover_audience_preview_operations()
+			enqueue.assert_called_once()
+		run_audience_preview_operation(first["operation"])
+		self.assertEqual(frappe.db.get_value("WA Operation", first["operation"], "status"), "Succeeded")
+		self.assertEqual(frappe.db.get_value("WA Operation", first["operation"], "attempt_count"), 1)
+		progress = get_progress(first["operation"])
+		self.assertEqual(progress["result"]["matched_count"], 0)
+		with patch("tag_marketing.infrastructure.audience_repository.count_candidates", return_value=2_002):
+			with self.assertRaises(CommandError) as conflict:
+				request_preview(segment["name"], {}, 20, "", request_id)
+		self.assertEqual(conflict.exception.code, "IDEMPOTENCY_CONFLICT")
+		with patch("tag_marketing.infrastructure.audience_repository.count_candidates", return_value=50_001):
+			with self.assertRaises(CommandError) as too_large:
+				request_preview(segment["name"], {}, 20, "", f"oversize-{self.run_id}")
+		self.assertEqual(too_large.exception.code, "AUDIENCE_PREVIEW_TOO_LARGE")
+
+	def test_segment_preview_scans_fifty_thousand_contacts_in_bounded_pages_and_caps_snapshots(self):
+		frappe.set_user("Administrator")
+		company = f"_WA Capacity {self.run_id}"
+		abbr = f"C{self.run_id[:2].upper()}"
+		raw(
+			"Company",
+			name=company,
+			company_name=company,
+			abbr=abbr,
+			country="South Africa",
+			default_currency="ZAR",
+		)
+		self.created_companies.append(company)
+		frappe.db.set_single_value("WA Settings", "marketing_company", company)
+		frappe.db.bulk_insert(
+			"WA Contact",
+			[
+				"name",
+				"owner",
+				"creation",
+				"modified",
+				"modified_by",
+				"docstatus",
+				"idx",
+				"company",
+				"phone_e164",
+				"display_name",
+				"consent_status",
+				"suppressed",
+				"archived",
+			],
+			[
+				(
+					f"WA-CAP-{self.run_id}-{index:05d}",
+					"Administrator",
+					frappe.utils.now_datetime(),
+					frappe.utils.now_datetime(),
+					"Administrator",
+					0,
+					0,
+					company,
+					f"+2782{index:07d}",
+					f"Capacity {index:05d}",
+					"Granted",
+					0,
+					0,
+				)
+				for index in range(50_000)
+			],
+			chunk_size=1000,
+		)
+		frappe.set_user(self.manager)
+		segment = save_segment(
+			f"Capacity {self.run_id}",
+			{"version": 1, "logic": "and", "rules": [], "groups": []},
+		)
+		self.created_segments.append(segment["name"])
+		self.assertEqual(
+			count_candidates(
+				company,
+				{"logic": "and", "rules": [], "groups": []},
+				[],
+				[],
+			),
+			50_000,
+		)
+		tracemalloc.start()
+		try:
+			preview = preview_segment(segment["name"], limit=20)
+			_peak_bytes = tracemalloc.get_traced_memory()[1]
+		finally:
+			tracemalloc.stop()
+		self.assertEqual(preview["matched_count"], 50_000)
+		self.assertEqual(preview["eligible_count"], 50_000)
+		self.assertEqual(len(preview["items"]), 20)
+		self.assertIsNotNone(preview["next_cursor"])
+		self.assertLess(_peak_bytes, 32 * 1024 * 1024)
+		consumed = 0
+		with self.assertRaises(CommandError):
+			for _contact in iterate_snapshot_recipients(
+				company,
+				{"version": 1, "logic": "and", "rules": [], "groups": []},
+				self.manager,
+			):
+				consumed += 1
+		self.assertEqual(consumed, 10_000)

@@ -88,13 +88,13 @@ export function show_error(error, { on_reload = null, trigger = document.activeE
  return dialog;
 }
 
-export function show_operation(operation, { trigger = document.activeElement } = {}) {
+export function show_operation(operation, { trigger = document.activeElement, on_succeeded = null } = {}) {
  if (typeof operation !== "string" || !operation || operation.length > 140) throw new RequestError("INVALID_INPUT", __("Choose a valid operation."));
  const dialog = new frappe.ui.Dialog({ title: __("Operation progress"), fields: [
   { fieldname: "operation", fieldtype: "Data", label: __("Operation"), read_only: 1, default: operation },
   { fieldname: "progress", fieldtype: "HTML" },
  ] });
- let closed = false, timer = null, inflight = false, last = null;
+ let closed = false, timer = null, inflight = false, last = null, notified = false;
  const body = dialog.fields_dict.progress.$wrapper;
  dialog.set_primary_action(__("Close"), () => dialog.hide());
  dialog.set_secondary_action_label(__("Refresh status"));
@@ -111,6 +111,12 @@ export function show_operation(operation, { trigger = document.activeElement } =
     const state = render_state(body, { title: labels[data.status] || __("Unavailable"), message: data.error?.message || __("Progress: {0}%", [data.progress_percent]) });
     $("<div class='progress'></div>").append($("<div class='progress-bar' role='progressbar'></div>").attr({ "aria-valuenow": data.progress_percent, "aria-valuemin": 0, "aria-valuemax": 100, "aria-label": __("Operation progress") }).css("width", data.progress_percent + "%")).appendTo(state);
     last = signature;
+   }
+   if (data.status === "Succeeded" && !notified && typeof on_succeeded === "function") {
+    notified = true;
+    dialog.hide();
+    on_succeeded(data.result);
+    return;
    }
    if (!terminal.has(data.status)) timer = window.setTimeout(refresh, 3000);
   } catch (error) {

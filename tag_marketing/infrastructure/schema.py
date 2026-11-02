@@ -16,6 +16,7 @@ UNIQUE_KEYS: dict[str, list[tuple[str, ...]]] = {
 	"WA Tag": [("company", "label")],
 	"WA Audience Segment": [("company", "segment_name")],
 	"WA Template": [("connection", "template_name", "language_code")],
+	"WA Template Revision": [("template", "revision_number")],
 	"WA Campaign Snapshot": [("campaign", "version")],
 	"WA Campaign Recipient": [("snapshot", "contact")],
 	"WA Conversation": [("company", "contact", "sending_number")],

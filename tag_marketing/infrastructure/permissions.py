@@ -14,6 +14,7 @@ DEFERRED_READ_TYPES = frozenset(
 		"WA Campaign Recipient",
 		"WA Import Row",
 		"WA Operation",
+		"WA Template Revision",
 	}
 )
 

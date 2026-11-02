@@ -18,6 +18,10 @@ TARGETS = {
 	"connections.set_enabled": "WA Connection",
 	"imports.validate_batch": "WA Import Batch",
 	"imports.confirm_batch": "WA Import Batch",
+	"audiences.preview": "WA Audience Segment",
+	"templates.save_draft": "WA Template",
+	"templates.submit": "WA Template",
+	"templates.sync": "WA Template",
 }
 STATUSES = frozenset({"Pending", "Running", "Succeeded", "Failed", "Cancelled"})
 
@@ -48,7 +52,8 @@ def get_progress(operation: str) -> dict[str, Any]:
 		raise CommandError("NOT_FOUND") from None
 	roles = set(frappe.get_roles(user))
 	manager_template_sync = (
-		doc.operation_type == "connections.sync_templates" and "Marketing Manager" in roles
+		doc.operation_type in {"connections.sync_templates", "templates.submit", "templates.sync"}
+		and "Marketing Manager" in roles
 	)
 	if (
 		target.company != company
@@ -93,6 +98,66 @@ def get_progress(operation: str) -> dict[str, Any]:
 					and isinstance(value, int)
 					and 0 <= value <= 100_000
 				}
+			elif doc.operation_type == "audiences.preview" and isinstance(stored, dict):
+				counts: dict[str, Any] = {
+					key: value
+					for key, value in stored.items()
+					if key in {"matched_count", "eligible_count"}
+					and isinstance(value, int)
+					and 0 <= value <= 50_000
+				}
+				excluded = stored.get("excluded")
+				items = stored.get("items")
+				if isinstance(excluded, dict) and isinstance(items, list) and len(items) <= 50:
+					counts["excluded"] = {
+						key: value
+						for key, value in excluded.items()
+						if key in {"suppressed", "archived", "withdrawn", "unknown_consent"}
+						and isinstance(value, int)
+						and 0 <= value <= 50_000
+					}
+					safe_items = []
+					for item in items:
+						if not isinstance(item, dict):
+							continue
+						if all(
+							isinstance(item.get(key), str) and len(item[key]) <= max_length
+							for key, max_length in (("name", 140), ("display_name", 140), ("phone", 32))
+						) and (
+							item.get("language") is None
+							or (isinstance(item.get("language"), str) and len(item["language"]) <= 32)
+						):
+							safe_items.append(
+								{key: item.get(key) for key in ("name", "display_name", "phone", "language")}
+							)
+					counts["items"] = safe_items
+					next_cursor = stored.get("next_cursor")
+					if next_cursor is None or (isinstance(next_cursor, str) and len(next_cursor) <= 140):
+						counts["next_cursor"] = next_cursor
+					result = counts
+			elif doc.operation_type == "templates.save_draft" and isinstance(stored, dict):
+				if (
+					isinstance(stored.get("template"), str)
+					and isinstance(stored.get("status"), str)
+					and isinstance(stored.get("content_hash"), str)
+					and len(stored["content_hash"]) == 64
+				):
+					result = {
+						"template": stored["template"],
+						"status": stored["status"],
+						"content_hash": stored["content_hash"],
+					}
+			elif doc.operation_type in {"templates.submit", "templates.sync"} and isinstance(stored, dict):
+				if stored.get("status") in {
+					"Draft",
+					"Pending",
+					"Approved",
+					"Rejected",
+					"Paused",
+					"Disabled",
+					"Unknown",
+				}:
+					result = {"status": stored["status"]}
 		except (TypeError, ValueError):
 			pass
 	return {

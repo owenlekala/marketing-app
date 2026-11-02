@@ -61,8 +61,8 @@ class TestFoundation(AppIntegrationTestCase):
 	def test_metadata_matches_every_documented_field(self):
 		text = (Path(__file__).resolve().parents[2] / "docs/whatsapp_marketing/DATA_MODEL.md").read_text()
 		parts = re.split(r"^### (WA .+)\n", text, flags=re.M)
-		self.assertEqual(len(PARENT_TYPES), 31)
-		self.assertEqual(len(list(DOCTYPE_ROOT.glob("*/*.json"))), 36)
+		self.assertEqual(len(PARENT_TYPES), 32)
+		self.assertEqual(len(list(DOCTYPE_ROOT.glob("*/*.json"))), 37)
 		for i in range(1, len(parts), 2):
 			name, body = parts[i : i + 2]
 			meta = frappe.get_meta(name)

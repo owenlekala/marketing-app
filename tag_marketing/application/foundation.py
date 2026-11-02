@@ -72,6 +72,16 @@ def validate_record(doc: Any) -> None:
 
 		validate_tag(doc)
 		return
+	if doc.doctype == "WA Audience Segment" and getattr(doc.flags, "wa_segment_command", False):
+		from tag_marketing.application.audience_segments import validate_segment_record
+
+		validate_segment_record(doc)
+		return
+	if doc.doctype == "WA Template" and getattr(doc.flags, "wa_template_command", False):
+		from tag_marketing.application.templates import validate_template_record
+
+		validate_template_record(doc)
+		return
 	validate_company_links(doc)
 	# Fail closed while feature services are absent, including Administrator/import/ignore_permissions.
 	# Feature tasks replace this gate with action-specific managed-field/state policies.
