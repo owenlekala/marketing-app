@@ -124,6 +124,8 @@ def cleanup_records(run_id):
 
 	cleanup_audience(run_id)
 	cleanup(run_id)
+	if owned:
+		frappe.db.delete("WA Audit Event", {"actor": ["in", owned]})
 	for email in owned:
 		frappe.delete_doc("User", email, ignore_permissions=True)
 

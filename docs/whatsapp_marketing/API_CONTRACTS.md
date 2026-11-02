@@ -117,12 +117,14 @@ Template commands: `templates.validate(template, expected_modified)` returns sup
 - `imports.create_batch(source_file, mapping)` — Marketing User/Manager; accepts only the actor's private, unattached CSV File and an allowlisted field-to-header mapping, binds its exact bytes and mapping hash, then attaches the source privately to a company-scoped batch. It returns bounded diagnostics and valid/rejected/missing-evidence counts without changing contacts.
 - `imports.inspect_csv(source_file)` — same roles; reads only an actor-owned private unattached file and returns validated column names for native mapping controls.
 - `imports.validate_batch(batch, expected_modified, request_id)` — returns operation with input hash/counts/private row-error file; no contact changes.
-- `imports.confirm_batch(batch, input_hash, expected_modified, request_id)` — requires Preview Ready and unchanged file/mapping; returns resumable import operation. Grants only when independent evidence passes validation.
+- `imports.confirm_batch(batch, input_hash, expected_modified, request_id)` — requires Preview Ready and unchanged file/mapping; queues a durable operation that imports in committed chunks and returns progress plus imported/suppressed/rejected totals. Active company-wide suppression digests are checked before contact creation; a match produces a generic suppressed row with no contact link. Grants only when independent evidence passes validation.
 - `contacts.consent_history(contact, start, page_length)` — Marketing User/Manager; returns bounded company-scoped event chronology for that contact, including recorded evidence references but never a public file URL.
-- `contacts.record_consent(contact, event_type, occurred_at, source, notice_version, evidence_reference, evidence_file, request_id)` — Marketing User/Manager for documented grants; Agent may record withdrawal or explicitly evidenced inbound consent within assigned scope. Returns event and effective consent state; cannot erase history.
+- `contacts.record_consent(contact, event_type, occurred_at, source, notice_version, evidence_reference, evidence_file, request_id)` — Marketing User/Manager for documented grants; Agent may record withdrawal within assigned scope. Provider inbound evidence is not a user-supplied grant source. Returns event and effective consent state; cannot erase history.
 - `contacts.set_suppression(contact, active, reason, expected_modified, request_id)` — Manager; releasing Opt Out requires qualifying newer evidence. Returns effective state and audit ID.
 
 Normal contact/tag/segment CRUD still enforces controllers and field permissions. No caller may write derived eligibility fields directly.
+
+Outbound reservation services must call `application.eligibility.lock_contact_for_submission(company, contact)` inside the same short transaction that checks caps and inserts its reservation. Consent and suppression mutations use the same contact-row lock. A false result forbids creating new send work; release the transaction before provider HTTP.
 
 ## Campaign commands
 

@@ -31,11 +31,11 @@ function open_consent_dialog(frm, eventType) {
 				await tag_marketing.ui.request("tag_marketing.api.audiences.record_consent", {
 					contact: frm.doc.name,
 					event_type: eventType,
-					occurred_at: values.occurred_at,
+					occurred_at: frappe.datetime.convert_to_system_tz(values.occurred_at, false).toISOString(),
 					source: values.source,
 					notice_version: values.notice_version || "",
 					evidence_reference: values.evidence_reference || "",
-					request_id: crypto.randomUUID(),
+					request_id: tag_marketing.ui.new_request_id(),
 				}, { command: true, button: dialog.get_primary_btn() });
 				dialog.hide();
 				await frm.reload_doc();
@@ -63,7 +63,7 @@ function open_suppression_dialog(frm) {
 					active: values.active ? 1 : 0,
 					reason: values.reason,
 					expected_modified: frm.doc.modified,
-					request_id: crypto.randomUUID(),
+					request_id: tag_marketing.ui.new_request_id(),
 				}, { command: true, button: dialog.get_primary_btn() });
 				dialog.hide();
 				await frm.reload_doc();

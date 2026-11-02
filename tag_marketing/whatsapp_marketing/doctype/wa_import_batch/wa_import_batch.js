@@ -7,7 +7,7 @@ frappe.ui.form.on("WA Import Batch", {
 					const result = await tag_marketing.ui.request("tag_marketing.api.audiences.validate_import_batch", {
 						batch: frm.doc.name,
 						expected_modified: frm.doc.modified,
-						request_id: crypto.randomUUID(),
+						request_id: tag_marketing.ui.new_request_id(),
 					}, { command: true, button });
 					if (result.operation) tag_marketing.ui.show_operation(result.operation, { trigger: button });
 					await frm.reload_doc();
@@ -35,7 +35,7 @@ async function confirm_import(frm) {
 					batch: frm.doc.name,
 					input_hash: frm.doc.input_hash,
 					expected_modified: frm.doc.modified,
-					request_id: crypto.randomUUID(),
+					request_id: tag_marketing.ui.new_request_id(),
 				}, { command: true, button: dialog.get_primary_btn() });
 				dialog.hide();
 				if (result.operation) tag_marketing.ui.show_operation(result.operation, { trigger: frm.page.btn_primary });

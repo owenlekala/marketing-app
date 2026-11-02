@@ -127,5 +127,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 0,
- "description": "Schema foundation. Feature commands are unavailable until their implementation task is verified."
+ "description": "Private company-scoped contact import with exact-hash confirmation and resumable progress."
 }

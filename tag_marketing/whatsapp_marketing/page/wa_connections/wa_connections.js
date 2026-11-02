@@ -3,7 +3,7 @@ frappe.pages["wa-connections"].on_page_load = function (wrapper) {
 	const body = $("<div class='tag-marketing p-4'></div>").appendTo(page.main);
 	const is_manager = frappe.user.has_role("Marketing Manager") && !frappe.user.has_role("System Manager");
 	let loading = false;
-	const request_id = () => crypto.randomUUID();
+	const request_id = () => tag_marketing.ui.new_request_id();
 	const action = async (method, args, button) => {
 		try {
 			const result = await tag_marketing.ui.request(method, args, { command: true, button });

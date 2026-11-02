@@ -65,7 +65,7 @@
    "fieldtype": "Select",
    "label": "Status",
    "read_only": 1,
-   "options": "Valid\nInvalid\nImported",
+   "options": "Valid\nInvalid\nImported\nSuppressed",
    "default": "Valid",
    "in_list_view": 1
   },

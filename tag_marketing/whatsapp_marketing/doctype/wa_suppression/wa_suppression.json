@@ -38,7 +38,7 @@
    "label": "Contact",
    "read_only": 1,
    "options": "WA Contact",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "purpose",
