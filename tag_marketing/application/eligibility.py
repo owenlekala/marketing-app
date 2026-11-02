@@ -22,7 +22,7 @@ def lock_contact_for_change(company: str, contact_name: str) -> dict[str, Any]:
 		contact_name,
 		as_dict=True,
 	)
-	if not rows or rows[0].company != company:
+	if not rows or rows[0]["company"] != company:
 		raise CommandError("NOT_FOUND")
 	return rows[0]
 
@@ -34,4 +34,8 @@ def lock_contact_for_submission(company: str, contact_name: str) -> bool:
 	transaction. A caller that receives False must not create new send work.
 	"""
 	state = lock_contact_for_change(company, contact_name)
-	return is_marketing_eligible(state.consent_status, bool(state.suppressed), bool(state.archived))
+	return is_marketing_eligible(
+		state["consent_status"],
+		bool(state["suppressed"]),
+		bool(state["archived"]),
+	)

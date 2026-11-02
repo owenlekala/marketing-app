@@ -4,7 +4,7 @@ Page contract: **WA-UI-TEMPLATES**. Sidebar label: **Templates**. [Navigation in
 
 ## Purpose and implementation
 
-Native WA Template List/Form with a scoped rendered message preview.
+Native WA Template List/Form with command-backed draft controls and a scoped rendered preview.
 
 **Users:** Marketing User/Manager edit local drafts; Manager submits/syncs; System Manager maintains connection access.
 
@@ -13,7 +13,7 @@ Native WA Template List/Form with a scoped rendered message preview.
 - List: name, language, category, connection, provider status and last sync.
 - Form tabs: Definition; Header/Body/Footer/Buttons; Preview; Provider Status.
 - Body variable controls identify positional/name placeholders supported by the pinned provider schema. Show examples separately from live values.
-- Header media selector accepts authorised private validated File references. Button editor supports the verified provider subset (URL and quick reply/unsubscribe); unsupported definitions remain sync-readable, not editable as broken forms.
+- Header media selector accepts only authorised private unattached JPEG/PNG/PDF files after byte, structure, digest and size validation. Button editor supports the verified provider subset (URL and quick reply/unsubscribe); unsupported definitions remain sync-readable, not editable as broken forms.
 
 ## Filters and data behaviour
 
@@ -21,7 +21,7 @@ Filter by connection, language, category and status. Authentication templates ar
 
 ## Actions and prerequisites
 
-Save Draft validates components; Submit for Review calls the provider through a persisted operation; Sync refreshes actual state. Approved content edits create a draft revision/resubmission workflow and invalidate affected stale campaign approvals rather than modifying history silently. Rejected drafts show safe reason text.
+Save Draft validates components and stores a canonical hash. Submit for Review calls the provider through a persisted operation; Sync refreshes actual state. Approved edits archive a local revision. Media-backed submission, provider-ID edits, and campaign-readiness invalidation remain open pending their owning contracts/tasks; a local save never implies approval. Rejected drafts show safe reason text.
 
 ## UI states, access and responsive behaviour
 

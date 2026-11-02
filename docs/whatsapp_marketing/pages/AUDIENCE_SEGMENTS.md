@@ -17,15 +17,15 @@ Native WA Audience Segment List/Form with native filter controls and paginated p
 
 ## Filters and data behaviour
 
-Use native AND/OR filter grouping only within the documented bounded AST (maximum 20 predicates, nesting depth 3). Operators are allowlisted by field type. Eligibility is always applied; users cannot filter around suppression. Counts and samples are evaluated under the same source permissions.
+Use the version 1 bounded AST `{version, logic, rules, groups}` with native Desk controls. Root and nested groups use `and` or `or`; the tree has at most 20 predicates and nesting depth 3. Rules allow `tag`, `language`, `source_type`, `created_on`, `archived`, and these source attributes only: `Lead.country`, `Lead.company`, `Customer.customer_name`, `Contact.full_name`, `Sales Order.company`, and `Sales Order.docstatus`. Operators are fixed by field type; lists contain at most 20 values. Arbitrary columns, operators, SQL and extra AST keys are rejected. Eligibility is always applied; users cannot filter around consent, suppression or archive state. Counts and samples recheck linked ERPNext source permissions in bounded batches.
 
 ## Actions and prerequisites
 
-Preview calls `audiences.preview`; Save validates schema and source fields. Create Campaign opens a Draft with this segment selected, without copying preview membership or granting approval. Disable prevents new selection but preserves historical snapshots.
+Preview calls `audiences.preview`; Save validates schema and source fields. Up to 2,000 candidates are previewed inline. Larger scans (up to 50,000 candidates) create a durable, idempotent operation with bounded background progress; larger audiences must be refined. Create Campaign opens a Draft with this segment selected, without copying preview membership or granting approval. Disable prevents new selection but preserves historical snapshots.
 
 ## UI states, access and responsive behaviour
 
-No eligible contacts explains exclusion counts and links to consent/import guidance. A malformed filter returns a field-level error; expensive previews use an operation if they exceed synchronous budget. Empty/failed preview never means approved zero recipients. Layout uses native controls in both themes.
+No eligible contacts explains exclusion counts and links to consent/import guidance. A malformed filter returns a safe validation error; preview is paginated, capped at 50,000 scanned contacts, and switches to durable background work above the inline threshold. Empty/failed preview never means approved zero recipients. Disabling prevents new use and leaves historical snapshots intact. Layout uses native controls in both themes.
 
 ## Interfaces and records
 

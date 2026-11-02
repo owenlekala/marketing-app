@@ -26,9 +26,9 @@ For South Africa, preserve sender identification, withdrawal and evidence workfl
 
 Connection access tokens, app secrets and verification tokens are Frappe Password fields with server-only retrieval. Redact request headers, tokens, payload query strings and personal data in logs. Rotation invalidates readiness and is audited; webhook signing-secret rollover follows the verified Meta contract, never indefinite acceptance of old secrets.
 
-All media/evidence/import/export files are private and attached to the owning authorised record. Download permission checks the current actor and owner. Do not trust a caller-supplied File URL or copy a private URL into a public field.
+All media/evidence/import/export files are private and attached to the owning authorised record. Template draft sources must be actor-owned, private and unattached; bytes, extension, structure, size and digest are checked before reference. Download permission checks the current actor and owner. Do not trust a caller-supplied File URL or copy a private URL into a public field.
 
-Inbound media downloads use validated provider media IDs and provider hosts from the supported contract, with redirect/host controls, size bounds and MIME/content checks. V1 outgoing types: JPEG/PNG up to 5 MB, PDF up to 10 MB, further restricted by the verified provider limit. Reject executable/HTML/SVG attachments; unsupported inbound content receives a safe placeholder and an operator diagnostic. Never render customer content as HTML. Store quarantined failures privately; do not offer download until validated.
+Inbound media downloads use validated provider media IDs and provider hosts from the supported contract, with redirect/host controls, size bounds and MIME/content checks. V1 outgoing types: JPEG/PNG up to 5 MB, PDF up to 10 MB, further restricted by the verified provider limit. Reject executable/HTML/SVG attachments; unsupported inbound content receives a safe placeholder and an operator diagnostic. Never render customer content as HTML. Store quarantined failures privately; do not offer download until validated. Template header media remains local-only until its provider sample-upload contract is verified; rejected source files remain private and unattached, and managed quarantine handling remains open.
 
 ## Realtime, reports and export
 

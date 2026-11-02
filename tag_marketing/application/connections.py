@@ -4,13 +4,15 @@ import hashlib
 import json
 import re
 from typing import Any
-from uuid import uuid4
 
 import frappe
 from frappe import _
 
 from tag_marketing.application.navigation import can_open_app
+from tag_marketing.application.operation_store import insert_idempotent_operation
+from tag_marketing.application.outbox import enqueue_message
 from tag_marketing.domain.errors import CommandError, require_revision
+from tag_marketing.domain.templates import content_hash as template_content_hash
 from tag_marketing.infrastructure.permissions import company_allowed
 
 REQUEST_ID = re.compile(r"^[A-Za-z0-9._:-]{8,128}$")
@@ -41,32 +43,6 @@ def _authorize(operation: str) -> None:
 		return
 	if "System Manager" not in roles and frappe.session.user != "Administrator":
 		frappe.throw(_("Only System Managers can manage this connection."), frappe.PermissionError)
-
-
-def _insert_idempotent_operation(doc: Any) -> tuple[str, bool]:
-	"""Enforce the operation uniqueness key even when duplicate requests race."""
-	savepoint = "wa_op_" + uuid4().hex
-	frappe.db.savepoint(savepoint)
-	try:
-		doc.db_insert()
-		return doc.name, True
-	except (frappe.UniqueValidationError, frappe.DuplicateEntryError):
-		frappe.db.rollback(save_point=savepoint)
-		prior = frappe.db.get_value(
-			"WA Operation",
-			{
-				"requested_by": doc.requested_by,
-				"operation_type": doc.operation_type,
-				"request_id": doc.request_id,
-			},
-			["name", "request_hash"],
-			as_dict=True,
-		)
-		if not prior:
-			raise
-		if prior.request_hash != doc.request_hash:
-			raise CommandError("IDEMPOTENCY_CONFLICT") from None
-		return prior.name, False
 
 
 def connection_health() -> list[dict[str, Any]]:
@@ -200,7 +176,7 @@ def enqueue_connection_operation(
 			"heartbeat_at": frappe.utils.now_datetime(),
 		}
 	)
-	operation_name, created = _insert_idempotent_operation(doc)
+	operation_name, created = insert_idempotent_operation(doc)
 	if not created:
 		return {"operation": operation_name}
 	frappe.enqueue(
@@ -225,8 +201,8 @@ def send_test(
 	template: str,
 	sample_values: list[Any],
 	request_id: str,
-) -> None:
-	"""Validate test-send intent while dispatch remains gated on the shared P4 outbox."""
+) -> dict[str, str]:
+	"""Queue an explicitly authorised test through the shared durable sender."""
 	_authorize("validate_connection")
 	company = _company()
 	if not isinstance(request_id, str) or not REQUEST_ID.fullmatch(request_id):
@@ -259,7 +235,7 @@ def send_test(
 	contact_state = frappe.db.get_value(
 		"WA Contact",
 		{"name": contact, "company": company},
-		["consent_status", "suppressed", "archived"],
+		["consent_status", "suppressed", "archived", "phone_e164"],
 		as_dict=True,
 	)
 	if not contact_state:
@@ -277,6 +253,7 @@ def send_test(
 	if (
 		template_doc.status != "Approved"
 		or template_doc.category == "Authentication"
+		or not frappe.db.get_value("WA Template", template, "provider_template_id")
 		or not template_doc.content_hash
 	):
 		raise CommandError("READINESS_FAILED")
@@ -286,10 +263,13 @@ def send_test(
 			if isinstance(template_doc.components_json, str)
 			else template_doc.components_json
 		)
-		canonical_components = json.dumps(
-			components, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+		actual_hash = template_content_hash(
+			frappe.db.get_value("WA Template", template, "template_name"),
+			frappe.db.get_value("WA Template", template, "language_code"),
+			template_doc.category,
+			components,
+			frappe.db.get_value("WA Template", template, "media_sha256"),
 		)
-		actual_hash = hashlib.sha256(canonical_components.encode()).hexdigest()
 		variables = _template_variable_indexes(components)
 	except (TypeError, ValueError):
 		raise CommandError("READINESS_FAILED") from None
@@ -297,8 +277,51 @@ def send_test(
 		raise CommandError("READINESS_FAILED")
 	if variables != list(range(1, len(variables) + 1)) or len(sample_values) != len(variables):
 		raise CommandError("INVALID_INPUT", "sample_values")
-	# Deliberately no success response or provider call until P4 implements the shared outbox.
-	raise CommandError("READINESS_FAILED")
+	parameters = [{"type": "text", "text": str(value)} for value in sample_values]
+	payload = {"components": ([{"type": "body", "parameters": parameters}] if parameters else [])}
+	logical_key = "test:" + hashlib.sha256(f"{frappe.session.user}:{request_id}".encode()).hexdigest()
+	prior = frappe.db.get_value(
+		"WA Message",
+		{"logical_key": logical_key},
+		[
+			"name",
+			"company",
+			"contact",
+			"sending_number",
+			"template",
+			"template_payload_json",
+			"status",
+		],
+		as_dict=True,
+	)
+	if prior:
+		stored = prior.template_payload_json
+		if isinstance(stored, str):
+			stored = json.loads(stored)
+		if (prior.company, prior.contact, prior.sending_number, prior.template, stored) != (
+			company,
+			contact,
+			sending_number,
+			template,
+			payload,
+		):
+			raise CommandError("IDEMPOTENCY_CONFLICT")
+		return {"message": prior.name, "status": prior.status}
+	queued = enqueue_message(
+		company=company,
+		contact=contact,
+		phone_e164=contact_state.phone_e164,
+		sending_number=sending_number,
+		purpose="Test",
+		template=template,
+		template_payload=payload,
+		logical_key=logical_key,
+		initiated_by=frappe.session.user,
+	)
+	return {
+		"message": queued["message"],
+		"status": frappe.db.get_value("WA Message", queued["message"], "status"),
+	}
 
 
 def _template_variable_indexes(components: Any) -> list[int]:
@@ -371,7 +394,7 @@ def set_enabled(
 			"heartbeat_at": frappe.utils.now_datetime(),
 		}
 	)
-	operation_name, created = _insert_idempotent_operation(doc)
+	operation_name, created = insert_idempotent_operation(doc)
 	if not created:
 		return {"operation": operation_name}
 	if enabled:

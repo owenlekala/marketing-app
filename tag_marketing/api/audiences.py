@@ -3,36 +3,18 @@
 import frappe
 
 from tag_marketing.api.responses import boundary
-from tag_marketing.application.audiences import (
-	add_source as link_source,
-)
-from tag_marketing.application.audiences import (
-	source_options,
-)
-from tag_marketing.application.audiences import (
-	source_preview as preview,
-)
-from tag_marketing.application.imports import (
-	confirm_batch as confirm_import,
-)
-from tag_marketing.application.imports import (
-	consent_history as get_consent_history,
-)
-from tag_marketing.application.imports import (
-	create_batch as create_import,
-)
-from tag_marketing.application.imports import (
-	inspect_file as inspect_import_file,
-)
-from tag_marketing.application.imports import (
-	record_consent as record_contact_consent,
-)
-from tag_marketing.application.imports import (
-	set_suppression as set_contact_suppression,
-)
-from tag_marketing.application.imports import (
-	validate_batch as validate_import,
-)
+from tag_marketing.application.audience_segments import request_preview as request_segment_preview
+from tag_marketing.application.audience_segments import save_segment, set_segment_disabled
+from tag_marketing.application.audiences import add_source as link_source
+from tag_marketing.application.audiences import source_options
+from tag_marketing.application.audiences import source_preview as preview_source
+from tag_marketing.application.imports import confirm_batch as confirm_import
+from tag_marketing.application.imports import consent_history as get_consent_history
+from tag_marketing.application.imports import create_batch as create_import
+from tag_marketing.application.imports import inspect_file as inspect_import_file
+from tag_marketing.application.imports import record_consent as record_contact_consent
+from tag_marketing.application.imports import set_suppression as set_contact_suppression
+from tag_marketing.application.imports import validate_batch as validate_import
 
 
 @frappe.whitelist(methods=["GET"])
@@ -50,7 +32,38 @@ def source_preview(
 		start, page_length = int(start), int(page_length)
 	except (TypeError, ValueError):
 		frappe.throw(frappe._("Choose a valid page and page size."))
-	return preview(source_doctype, search, country_code, start, page_length)
+	return preview_source(source_doctype, search, country_code, start, page_length)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def preview(segment: str, exclusions, limit: int = 20, cursor: str = "", request_id: str = ""):
+	try:
+		limit = int(limit)
+	except (TypeError, ValueError):
+		frappe.throw(frappe._("Choose a valid preview size."))
+	if isinstance(exclusions, str):
+		exclusions = frappe.parse_json(exclusions)
+	return request_segment_preview(segment, exclusions, limit, cursor, request_id)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def save_audience_segment(segment_name: str, filters, expected_modified: str = "", segment: str = ""):
+	if isinstance(filters, str):
+		filters = frappe.parse_json(filters)
+	return save_segment(segment_name, filters, expected_modified or None, segment or None)
+
+
+@frappe.whitelist(methods=["POST"])
+@boundary(mutates=True)
+def disable_audience_segment(segment: str, disabled: bool, expected_modified: str):
+	if isinstance(disabled, str):
+		value = disabled.lower()
+		if value not in {"0", "1", "false", "true"}:
+			frappe.throw(frappe._("Choose a valid audience state."))
+		disabled = value in {"1", "true"}
+	return set_segment_disabled(segment, disabled, expected_modified)
 
 
 @frappe.whitelist(methods=["POST"])

@@ -185,7 +185,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 
 - `company` — **Link → Company**; required.
 - `segment_name` — **Data**; required.
-- `filters_json` — **JSON**; required versioned allowlisted filter AST; no arbitrary SQL/code.
+- `filters_json` — **JSON**; required version 1 allowlisted AST `{version, logic, rules, groups}`; at most 20 predicates and depth 3. Fields: tag, language, source type, creation date, archived, and fixed source attributes `Lead.country`, `Lead.company`, `Customer.customer_name`, `Contact.full_name`, `Sales Order.company`, `Sales Order.docstatus`; no arbitrary SQL/code.
 - `disabled` — **Check**; default 0.
 - `last_preview_count` — **Int**; advisory cache, never the approved audience.
 
@@ -204,6 +204,9 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `language_code` — **Data**; required explicit provider locale.
 - `category` — **Select**; Marketing, Utility, Authentication, Unknown; unknown categories are retained but cannot be used for sending.
 - `components_json` — **JSON**; required validated header/body/footer/button schema.
+- `media_file` — **Link → File**; optional actor-owned private, unattached JPEG/PNG/PDF source; never public.
+- `media_sha256` — **Data**; private byte digest included in the local content hash.
+- `revision_number` — **Int**; increments when an Approved local definition is revised.
 - `status` — **Select**; service-managed provider state.
 - `content_hash` — **Data**; required canonical content hash.
 - `provider_reason` — **Small Text**; redacted rejection/pause reason.
@@ -211,9 +214,26 @@ Profiles/configuration are editable by permitted users. Every field described as
 
 **Lifecycle:** Draft → Pending → Approved / Rejected; Approved → Paused / Disabled; unrecognized provider states are retained as Unknown and cannot be selected for sending. Provider states are authoritative.
 
-**Write ownership:** User edits only Draft/Rejected local drafts, then resubmits. Campaigns require Approved; edits/reclassification invalidate stale approval snapshots.
+**Write ownership:** Marketing User/Manager edit through the application command; Manager submits/syncs. Approved edits archive the previous provider definition in WA Template Revision and make the current record Draft. Campaigns require Approved; campaign-readiness invalidation remains open for WA-P4-002 because campaign snapshot persistence is not implemented yet.
 
 **Constraints/indexes:** Unique (connection, template_name, language_code); unique provider_template_id when populated (use nullable unique column).
+
+### WA Template Revision
+
+- `company` — **Link → Company**; required and copied from the template for permission filtering.
+- `template` — **Link → WA Template**; required.
+- `revision_number` — **Int**; required monotonic revision.
+- `provider_template_id` — **Data**; immutable provider identity.
+- `category` — **Data**; immutable provider category.
+- `components_json` — **JSON**; immutable provider components.
+- `media_file` — **Link → File**; private media referenced by the approved provider definition.
+- `media_sha256` — **Data**; media digest captured with the approved definition.
+- `content_hash` — **Data**; immutable content hash.
+- `status` — **Data**; provider status at archive time.
+
+**Lifecycle:** Append-only and service-written, with no direct role permissions.
+
+**Constraints/indexes:** Unique (template, revision_number).
 
 ### WA Campaign
 
@@ -313,9 +333,9 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `last_read_message` — **Link → WA Message**; optional cursor.
 - `read_at` — **Datetime**; UTC.
 
-**Lifecycle:** User-specific read cursor.
+**Lifecycle:** User-specific read cursor, advanced by the authorised conversation command.
 
-**Write ownership:** Only the current authorised user advances their cursor; unread list queries never expose other users.
+**Write ownership:** Only the current authorised user advances their cursor; unread list queries never expose other users. Company and conversation are derived from the authorised conversation.
 
 **Constraints/indexes:** Unique (conversation, user).
 
@@ -565,12 +585,14 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `before_hash` — **Data**; optional.
 - `after_hash` — **Data**; optional.
 - `details_json` — **JSON**; redacted reason, operation ID and safe changed fields.
+- `idempotency_key` — **Data**; optional unique digest for replay-safe audited commands.
+- `request_hash` — **Data**; optional canonical argument digest used to detect changed replay arguments.
 
 **Lifecycle:** Append-only; privacy redaction retains integrity metadata.
 
 **Write ownership:** Services write; Managers/System Managers read within company; Analyst only aggregate outcomes.
 
-**Constraints/indexes:** Index (company, target_doctype, target_name, occurred_at).
+**Constraints/indexes:** Unique idempotency_key when populated; index (company, target_doctype, target_name, occurred_at).
 
 ### WA Import Row
 
@@ -657,7 +679,7 @@ Use [WA-A01, WA-A04, WA-A06, WA-A07 and WA-A10](TESTING_AND_ACCEPTANCE.md). Test
 
 ## Foundation implementation boundary
 
-The [owned DocType metadata](../../tag_marketing/whatsapp_marketing/doctype) defines all 31 parent and five child records. It is the runtime source for fields and DocPerms. [Schema helpers](../../tag_marketing/infrastructure/schema.py) own compound keys/indexes; [installation](../../tag_marketing/setup/install.py) creates missing roles/defaults and the encrypted suppression key without resetting operator settings, existing roles or Custom DocPerms. Settings defaults are read from their DocType fields rather than copied into a second runtime configuration. The settings DocType sync hook seeds these safe values and the Single record identity before Frappe initialises empty Single records. No marketing roles are assigned to users automatically.
+The [owned DocType metadata](../../tag_marketing/whatsapp_marketing/doctype) defines all 32 parent and five child records. It is the runtime source for fields and DocPerms. [Schema helpers](../../tag_marketing/infrastructure/schema.py) own compound keys/indexes; [installation](../../tag_marketing/setup/install.py) creates missing roles/defaults and the encrypted suppression key without resetting operator settings, existing roles or Custom DocPerms. Settings defaults are read from their DocType fields rather than copied into a second runtime configuration. The settings DocType sync hook seeds these safe values and the Single record identity before Frappe initialises empty Single records. No marketing roles are assigned to users automatically.
 
 At P1-001, settings are the only editable business record. All other parent controllers delegate to [foundation services](../../tag_marketing/application/foundation.py), which run before_validate and reject generic create/update/delete even with ignore_permissions or ignore_validate; later feature tasks replace this closed gate with their complete action/state guards. No public mutation bypass flag exists. Trusted setup, settings auditing and synthetic SQL tests use explicit server persistence. Direct database access remains a privileged framework capability, not a public API.
 

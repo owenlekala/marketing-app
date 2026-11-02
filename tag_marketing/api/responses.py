@@ -17,6 +17,8 @@ HTTP_STATUS = {
 	"STALE_DOCUMENT": 409,
 	"IDEMPOTENCY_CONFLICT": 409,
 	"INVALID_STATE": 409,
+	"AUDIENCE_TOO_LARGE": 422,
+	"AUDIENCE_PREVIEW_TOO_LARGE": 422,
 	"READINESS_FAILED": 422,
 	"LOCAL_RATE_LIMIT": 429,
 	"PROVIDER_UNAVAILABLE": 502,
@@ -34,6 +36,12 @@ def error_payload(code, correlation_id, field=None):
 		"STALE_DOCUMENT": _("This record changed. Reload and review it before trying again."),
 		"IDEMPOTENCY_CONFLICT": _("This request identifier was already used with different values."),
 		"INVALID_STATE": _("This action is unavailable in the current state."),
+		"AUDIENCE_TOO_LARGE": _(
+			"This audience exceeds the 10,000-recipient limit. Refine the filters before building a snapshot."
+		),
+		"AUDIENCE_PREVIEW_TOO_LARGE": _(
+			"This preview exceeds the supported 50,000-contact scan. Refine the filters before previewing."
+		),
 		"READINESS_FAILED": _("Required setup or policy checks have not passed."),
 		"LOCAL_RATE_LIMIT": _("The local rate limit has been reached."),
 		"PROVIDER_UNAVAILABLE": _("The provider is unavailable. Check operation status before trying again."),

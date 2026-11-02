@@ -20,6 +20,9 @@ scheduler_events = {
 		"* * * * *": [
 			"tag_marketing.application.event_recovery.recover_due_work",
 			"tag_marketing.application.import_jobs.recover_import_operations",
+			"tag_marketing.application.audience_preview_jobs.recover_audience_preview_operations",
+			"tag_marketing.application.template_jobs.recover_template_operations",
+			"tag_marketing.application.outbox.recover_outbox",
 		]
 	}
 }
@@ -57,7 +60,11 @@ app_include_css = ["tag_marketing.bundle.css"]
 doctype_js = {
 	"WA Contact": "tag_marketing/whatsapp_marketing/doctype/wa_contact/wa_contact.js",
 	"WA Import Batch": "tag_marketing/whatsapp_marketing/doctype/wa_import_batch/wa_import_batch.js",
+	"WA Audience Segment": "tag_marketing/whatsapp_marketing/doctype/wa_audience_segment/wa_audience_segment.js",
+	"WA Template": "tag_marketing/whatsapp_marketing/doctype/wa_template/wa_template.js",
 }
 doctype_list_js = {
 	"WA Contact": "tag_marketing/whatsapp_marketing/doctype/wa_contact/wa_contact_list.js",
+	"WA Audience Segment": "tag_marketing/whatsapp_marketing/doctype/wa_audience_segment/wa_audience_segment_list.js",
+	"WA Template": "tag_marketing/whatsapp_marketing/doctype/wa_template/wa_template_list.js",
 }

@@ -22,7 +22,7 @@
 
 ## WA-P3-002
 
-- [ ] **Implement resumable CSV, consent and suppression**
+- [x] **Implement resumable CSV, consent and suppression**
 
 **Depends on:** `WA-P3-001`
 
@@ -36,9 +36,11 @@
 
 **Completion evidence:** Provide import counts/results, race tests, evidence chronology tests and consent UI screenshots using synthetic data.
 
+**Completion evidence (2 November 2026):** Implemented private, exact-hash CSV preview/confirmation with durable 100-row chunk processing, a resumable import ledger and terminal replay-safe outcomes. Append-only consent events derive effective state by occurrence chronology; withdrawals suppress immediately and backdated grants cannot reopen permission. Company-wide keyed suppression digests are checked before CSV and ERPNext source-link contact creation; detached digest records block re-import after identity-bearing rows are removed. `application.eligibility.lock_contact_for_submission` is the shared short-transaction lock/read contract for future P4 reservations, and suppression changes use the same contact-row lock. A two-connection test proves withdrawal waits for an active submission eligibility lock and closes the next eligibility check. The manager-only release path now rechecks consent after acquiring that lock. `quality.py integration` passed **85 Frappe integration tests and 25 unit tests**, including suppression replay after state change, both re-import paths, withdrawal chronology and a crash after a committed 100-row chunk. `quality.py lint` passed Ruff, formatting and mypy across **172 sources**. `quality.py docs` passed 48 Markdown files, 705 links, 79 source references, 7 Mermaid diagrams, 18 requirements, 32 tasks and 18 acceptance scenarios with zero errors or duplicate groups. The focused browser acceptance passed 8 cases without skips across desktop light/dark, tablet and mobile; evidence is under `development/whatsapp_marketing/.local/test-results/browser/f6e6a6d30bb042d6ad6360bad790ed83/`. P4 must use the published lock contract in its actual reservation path and run sender-level dispatch tests; approved erasure workflow remains P7-owned. This closes P3-002 only; it does not qualify production or enable live sending.
+
 ## WA-P3-003
 
-- [ ] **Implement explainable segments and bounded audience queries**
+- [x] **Implement explainable segments and bounded audience queries**
 
 **Depends on:** `WA-P3-002`
 
@@ -50,7 +52,9 @@
 
 **Failure cases and verification:** Reject arbitrary fields/operators/SQL, deep groups and bypass attempts. Test 50,000-contact pagination and source access changes.
 
-**Completion evidence:** Record count/sample reconciliation, bounded query/memory evidence and native empty/exclusion states.
+**Completion evidence:** Verified 2 November 2026. Implemented a framework-independent version 1 filter AST with strict field/operator/type allowlists, group-depth and predicate budgets, plus native segment create/edit/preview/disable controls. SQL compilation and persistence are isolated in the infrastructure adapter; values are bound, candidate-threshold counting stops at 50,001, keyset scans use 1,000-row permission-rechecked batches, and source access is checked for the initiating actor on every page. Preview counts reconcile against samples, applies eligibility independently of user filters, caps scans at 50,000 contacts, and switches above 2,000 candidates to an idempotent durable operation with actor/revision rechecks, bounded progress and stale/pending recovery. Snapshot consumers receive a stable 100-row iterator that yields at most 10,000 eligible recipients and fails on the 10,001st; WA-P4-002 must consume it in the snapshot write transaction.
+
+`python3 development/whatsapp_marketing/quality.py integration` passed **88 Frappe integration tests and 30 unit tests**. Coverage includes arbitrary AST rejection, source permission changes, count/sample/exclusion reconciliation, queued idempotency and worker recovery, the 50,000-contact scan with less than 32 MiB additional traced Python peak, and the 10,001st snapshot-recipient failure. `quality.py lint` passed Ruff, formatting and mypy across **177 sources**. `quality.py docs` passed 48 Markdown files, 705 relative links, 79 source references, 7 diagrams, 18 requirements, 32 tasks and 18 acceptance scenarios with zero duplicate groups or errors. The focused Desk browser matrix passed **4 cases without skips** across desktop light/dark, tablet and mobile; strict TypeScript and all **3 egress probes** passed. Evidence: `development/whatsapp_marketing/.local/test-results/browser/0ef1f276a03a4474bf89aa7d86b6b06c/`. The native preview demonstrates an Unknown-consent exclusion and empty eligible state. This closes the audience-query slice of WA-A03/WA-A16; broader staging throughput targets, snapshot persistence, WA-P3-004 templates and WA-P4-002 campaigns remain open. Production is not qualified and live sending remains disabled.
 
 ## WA-P3-004
 
@@ -64,6 +68,10 @@
 
 **Implementation and boundaries:** Implement local template drafts, supported components/language/category, provider submit/sync operations, content hashes and safe previews. Add private JPEG/PNG/PDF validation with provider size limits, safe ID/host-based inbound retrieval and quarantine failures. Keep Authentication sync-only and surface unsupported components read-only.
 
-**Failure cases and verification:** Handle duplicate submit, rejected/paused/reclassified templates, invalid placeholders, cross-connection selection, hostile redirect and fake MIME. Invalidate affected stale campaign approval readiness.
+**Failure cases and verification:** Handle duplicate submit, rejected/paused/reclassified templates, invalid placeholders, cross-connection selection, hostile redirect and fake MIME. Invalidate affected stale campaign approval readiness when WA-P4-002 introduces campaign snapshots.
 
 **Completion evidence:** Record contract/UI/media permission tests and, if authorised credentials exist, actual approval-sync evidence without claiming provider approval on local save.
+
+**Implementation evidence (In Progress, 2 November 2026):** Added pure editable-subset validation and canonical hashes, owner/private/unattached media checks with structural JPEG/PNG/PDF validation, exact stored-size matching, private revision snapshots for approved edits, role/company-scoped application commands, safe previews, native Desk draft/validate/submit/sync controls, and durable submit/sync operations. Authentication remains sync-only and provider status is never inferred from local save. New drafts start at revision 1 and malformed placeholders fail closed. `python3 development/whatsapp_marketing/quality.py integration` previously passed **95 Frappe integration tests and 35 unit tests**, before the latest media-validation changes. Focused tests for malformed JPEG wrappers, trailing bytes, and File-size mismatch were added but could not be run because Docker is unavailable in this environment. The focused browser acceptance previously passed **4 cases without skips** across desktop light/dark, tablet and mobile, with strict TypeScript and all **3 egress probes** passing. The native flow creates and validates a draft and proves script-like sample text renders as escaped content. Evidence: `development/whatsapp_marketing/.local/test-results/browser/428c64acfd554671b68d8deb7fb56b49/`. Final lint, documentation and whitespace checks are recorded in [Progress](../PROGRESS.md#wa-p3-004--template-lifecycle-and-private-media-validation).
+
+This task remains open: media-backed submission needs a verified provider upload-handle contract; provider-ID edit/resubmission behavior needs a verified edit contract; invalid media quarantine/retention needs an explicit lifecycle; WA-P4-002 must invalidate affected campaign readiness; and authorised provider approval-sync evidence remains outstanding. No live credentials or provider calls were used; this implementation does not qualify production readiness.
