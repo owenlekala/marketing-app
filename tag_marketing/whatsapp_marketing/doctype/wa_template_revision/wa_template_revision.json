@@ -1,0 +1,30 @@
+{
+ "doctype": "DocType",
+ "name": "WA Template Revision",
+ "module": "WhatsApp Marketing",
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "allow_rename": 0,
+ "allow_import": 0,
+ "allow_bulk_edit": 0,
+ "allow_copy": 0,
+ "is_submittable": 0,
+ "field_order": ["company", "template", "revision_number", "provider_template_id", "category", "components_json", "media_file", "media_sha256", "content_hash", "status"],
+ "fields": [
+  {"fieldname": "company", "fieldtype": "Link", "label": "Company", "options": "Company", "reqd": 1, "read_only": 1},
+  {"fieldname": "template", "fieldtype": "Link", "label": "Template", "options": "WA Template", "reqd": 1, "read_only": 1},
+  {"fieldname": "revision_number", "fieldtype": "Int", "label": "Revision Number", "reqd": 1, "read_only": 1},
+  {"fieldname": "provider_template_id", "fieldtype": "Data", "label": "Provider Template ID", "read_only": 1},
+  {"fieldname": "category", "fieldtype": "Data", "label": "Category", "read_only": 1},
+  {"fieldname": "components_json", "fieldtype": "JSON", "label": "Components", "read_only": 1, "in_global_search": 0},
+  {"fieldname": "media_file", "fieldtype": "Link", "label": "Private Media", "options": "File", "read_only": 1},
+  {"fieldname": "media_sha256", "fieldtype": "Data", "label": "Media SHA-256", "read_only": 1},
+  {"fieldname": "content_hash", "fieldtype": "Data", "label": "Content Hash", "reqd": 1, "read_only": 1},
+  {"fieldname": "status", "fieldtype": "Data", "label": "Provider Status", "read_only": 1}
+ ],
+ "permissions": [],
+ "sort_field": "revision_number",
+ "sort_order": "DESC",
+ "track_changes": 0,
+ "description": "Immutable provider-approved template revision snapshot."
+}

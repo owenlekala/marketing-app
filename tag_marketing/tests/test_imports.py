@@ -1,7 +1,7 @@
 """Real-site tests for append-only consent and company-wide suppression."""
 
-from datetime import UTC, datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Event
 from unittest.mock import patch

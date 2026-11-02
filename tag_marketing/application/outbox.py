@@ -198,7 +198,13 @@ def process_outbox_item(outbox_name: str) -> None:
 		rate_lock = None
 		phase = "provider_factory"
 		connection = frappe.get_doc("WA Connection", context["connection"])
-		api = provider_factory(connection)
+		try:
+			api = provider_factory(connection)
+		except ProviderFailure as error:
+			_fail_known_non_submission(
+				outbox.name, message.name, attempt.name, lease, error.kind.value
+			)
+			return
 		phase = "provider_submit"
 		try:
 			result = api.submit_message(context["provider_phone_id"], context["payload"])
@@ -464,6 +470,25 @@ def _handle_provider_failure(
 	_release_reservation(message)
 	frappe.db.set_value(
 		"WA Message", message, {"status": "Failed", "error_code": error.kind.value}, update_modified=False
+	)
+	frappe.db.commit()
+
+
+def _fail_known_non_submission(
+	outbox: str, message: str, attempt: str, lease: str, code: str
+) -> None:
+	"""Fail closed when adapter construction proves no HTTP request was sent."""
+	frappe.db.sql(
+		"UPDATE `tabWA Outbox Item` SET status='Failed', last_error_code=%s, lease_owner=NULL, lease_until=NULL, modified=NOW() WHERE name=%s AND lease_owner=%s AND status='Submitting'",
+		(code, outbox, lease),
+	)
+	if frappe.db.sql("SELECT ROW_COUNT()")[0][0] != 1:
+		frappe.db.rollback()
+		return
+	_mark_attempt(attempt, "Rejected", code)
+	_release_reservation(message)
+	frappe.db.set_value(
+		"WA Message", message, {"status": "Failed", "error_code": code}, update_modified=False
 	)
 	frappe.db.commit()
 

@@ -612,6 +612,36 @@ class TestConnectionCommands(AppIntegrationTestCase):
 			recover_outbox()
 		self.assertFalse(enqueue.called)
 
+	def test_credential_failure_before_http_is_terminal_and_releases_reservation(self):
+		contact, number, template = self._prepare_test_send()
+		frappe.set_user(self.system_manager)
+		with patch("frappe.enqueue"):
+			queued = send_test(
+				connection=self.connection.name,
+				sending_number=number.name,
+				contact=contact.name,
+				template=template.name,
+				sample_values=["Credential failure"],
+				request_id="credential-failure-" + self.run_id,
+			)
+		outbox = frappe.db.get_value("WA Outbox Item", {"message": queued["message"]}, "name")
+		with patch(
+			"tag_marketing.application.outbox.provider_factory",
+			side_effect=ProviderFailure(FailureKind.INVALID_CREDENTIAL),
+		) as factory:
+			process_outbox_item(outbox)
+		factory.assert_called_once()
+		self.assertEqual(frappe.db.get_value("WA Outbox Item", outbox, "status"), "Failed")
+		self.assertEqual(frappe.db.get_value("WA Message", queued["message"], "status"), "Failed")
+		self.assertEqual(
+			frappe.db.get_value("WA Send Reservation", {"message": queued["message"]}, "state"),
+			"Released",
+		)
+		self.assertEqual(
+			frappe.db.get_value("WA Message Attempt", {"message": queued["message"]}, "result"),
+			"Rejected",
+		)
+
 	def test_manager_cannot_read_validation_operation_for_hidden_connection(self):
 		frappe.set_user(self.system_manager)
 		with patch("frappe.enqueue"):

@@ -1,5 +1,79 @@
 import { test, expect, login } from "./fixtures";
 
+test("Marketing Manager edits, previews and disables a bounded audience segment", async ({ page, accounts }, info) => {
+  test.setTimeout(120_000);
+  await login(page, accounts.audience_manager, info.project.use.colorScheme === "dark" ? "dark" : "light");
+  const segmentLabel = `Browser Segment ${accounts.run_id} ${info.project.name}`;
+  await page.evaluate(async ({ source, phone }) => {
+    const ui = (window as any).tag_marketing?.ui;
+    if (!ui) throw new Error("Marketing commands are not available in Desk");
+    await ui.request("tag_marketing.api.audiences.add_source", {
+      source_doctype: "Lead",
+      source_name: source,
+      selected_phone: phone,
+      country_code: "ZA",
+      include_unassigned_lead: false,
+    }, { command: true });
+  }, { source: accounts.source, phone: accounts.phone });
+  await page.evaluate(() => (window as any).frappe.set_route("List", "WA Audience Segment", "List"));
+  let create = page.getByRole("button", { name: "New audience segment", exact: true });
+  if (info.project.name === "mobile") {
+    await page.getByRole("button", { name: "Menu", exact: true }).click();
+    create = page.getByRole("menuitem", { name: "New audience segment", exact: true });
+  }
+  await expect(create).toBeVisible({ timeout: 30_000 });
+  await create.click();
+  const createDialog = page.locator(".modal.show").filter({ has: page.getByRole("heading", { name: "New audience segment" }) });
+  await createDialog.locator('.frappe-control[data-fieldname="segment_name"] input').fill(segmentLabel);
+  const saveResponsePromise = page.waitForResponse(response => response.url().includes("save_audience_segment"));
+  await createDialog.getByRole("button", { name: "Create", exact: true }).click();
+  const saveResponse = await saveResponsePromise;
+  const savedSegment = await saveResponse.json();
+  expect(saveResponse.ok(), JSON.stringify(savedSegment)).toBeTruthy();
+  expect(savedSegment.message?.ok, JSON.stringify(savedSegment)).toBe(true);
+  const segmentName = savedSegment.message.data.name as string;
+  await expect.poll(() => page.evaluate(() => (window as any).frappe.get_route())).toEqual(["Form", "WA Audience Segment", segmentName]);
+  await expect(page.locator('.form-layout .frappe-control[data-fieldname="segment_name"] input')).toHaveValue(segmentLabel, { timeout: 30_000 });
+
+  const formAction = async (label: string) => {
+    let action = page.getByRole("button", { name: label, exact: true });
+    if (info.project.name === "mobile") {
+      await page.locator(".menu-more-button:visible").last().click();
+      action = page.getByRole("menuitem", { name: label, exact: true });
+    }
+    await action.click();
+  };
+  await formAction("Edit audience");
+  const editDialog = page.locator(".modal.show").filter({ has: page.getByRole("heading", { name: "Edit audience filters" }) });
+  await expect(editDialog.locator('.frappe-control[data-fieldname="filters_json"]')).toBeVisible();
+  const definition = JSON.stringify({
+    version: 1,
+    logic: "and",
+    rules: [{ field: "source_type", operator: "equals", value: "Lead" }],
+    groups: [],
+  }, null, 2);
+  const editor = editDialog.locator('.frappe-control[data-fieldname="filters_json"] .ace_content');
+  await editor.click();
+  await page.keyboard.press("Control+A");
+  await page.keyboard.insertText(definition);
+  await page.keyboard.press("Tab");
+  await editDialog.getByRole("button", { name: "Save filters", exact: true }).click();
+  await expect(page.locator('.frappe-control[data-fieldname="filters_json"]').first()).toContainText('"source_type"', { timeout: 30_000 });
+
+  await formAction("Preview audience");
+  const preview = page.locator(".modal.show").filter({ has: page.getByRole("heading", { name: "Audience preview" }) });
+  await expect(preview.locator('[data-fieldname="result"]')).toContainText("Live advisory preview", { timeout: 30_000 });
+  await expect(preview.locator('[data-fieldname="result"]')).toContainText("Eligible");
+  await expect(preview.locator('[data-fieldname="result"]')).toContainText("Unknown consent: 1");
+  await expect(preview.locator('[data-fieldname="result"]')).toContainText("No eligible contacts match these filters.");
+  await page.screenshot({ path: info.outputPath("audience-segment-preview.png"), fullPage: true });
+  await preview.getByRole("button", { name: "Close", exact: true }).last().click();
+
+  await formAction("Disable");
+  await expect(page.locator('.frappe-control[data-fieldname="disabled"] input')).toHaveClass(/disabled-selected/, { timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "Preview audience", exact: true })).toHaveCount(0);
+});
+
 test("Marketing Manager imports an authorised ERPNext source through native Desk controls", async ({ page, accounts }, info) => {
   test.setTimeout(120_000);
   await login(page, accounts.audience_manager, info.project.use.colorScheme === "dark" ? "dark" : "light");
