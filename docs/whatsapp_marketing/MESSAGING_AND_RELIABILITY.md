@@ -28,7 +28,7 @@ Scheduler discovers due Scheduled campaigns every minute using indexed queries a
 4. Call Meta through the pinned adapter. Persist provider ID, Accepted result, retained reservation and outbox Done atomically on success.
 5. An explicit retryable rejection may schedule Retry. An explicit permanent rejection marks Failed and releases the reservation. An ambiguous timeout/disconnect/crash after Submitting marks Unknown and retains the reservation.
 
-Use a company/contact row lock for cap reservation. Do not hold that lock over HTTP. Withdrawal and submission eligibility share coordination so new work cannot pass an already-recorded withdrawal. A provider request already in flight when withdrawal occurs cannot be recalled; record timing accurately.
+Use `application.eligibility.lock_contact_for_submission(company, contact)` for live eligibility and cap reservation in one short transaction. Consent and suppression mutations use the same contact-row lock. Do not hold that lock over HTTP. A provider request already in flight when withdrawal occurs cannot be recalled; record timing accurately. The sender must recheck immediately before its submission boundary.
 
 ## Retry and recovery policy
 

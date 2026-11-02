@@ -133,7 +133,7 @@ Profiles/configuration are editable by permitted users. Every field described as
 ### WA Suppression
 
 - `company` — **Link → Company**; required.
-- `contact` — **Link → WA Contact**; required.
+- `contact` — **Link → WA Contact**; optional after approved erasure; retained identity digest continues to block re-import.
 - `purpose` — **Select**; Marketing.
 - `reason` — **Select**; Opt Out, Manual Block, Invalid Address.
 - `active` — **Check**; required; only services change.
@@ -579,12 +579,12 @@ Profiles/configuration are editable by permitted users. Every field described as
 - `row_number` — **Int**; required positive CSV row ordinal.
 - `input_hash` — **Data**; required batch file+mapping hash.
 - `row_hash` — **Data**; canonical row content hash.
-- `status` — **Select**; Valid, Invalid, Imported.
+- `status` — **Select**; Valid, Invalid, Imported, Suppressed.
 - `contact` — **Link → WA Contact**; nullable until matched/imported.
 - `error_code` — **Data**; safe row diagnostic.
 - `projection_json` — **JSON**; bounded validated allowlisted fields/evidence references; sensitive; no executable expressions.
 
-**Lifecycle:** Valid → Imported; invalid rows remain Invalid until a new validated input batch/version.
+**Lifecycle:** Valid → Imported or Suppressed; invalid rows remain Invalid until a new validated input batch/version. Suppressed rows do not link to or recreate a contact.
 
 **Write ownership:** Importer owns writes; rows are standalone and paginated. Repeat confirmation resumes only unchanged input. Cleanup follows configured raw/import retention.
 

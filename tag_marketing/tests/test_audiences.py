@@ -7,6 +7,7 @@ from uuid import uuid4
 import frappe
 
 from tag_marketing.application.audiences import add_source, source_preview
+from tag_marketing.application.suppression import digest_for_identity
 from tag_marketing.domain.errors import CommandError
 from tag_marketing.tests.support.integration import AppIntegrationTestCase
 from tag_marketing.tests.support.persistence import raw
@@ -159,6 +160,25 @@ class TestAudienceSources(AppIntegrationTestCase):
 		with self.assertRaises(frappe.PermissionError):
 			contact.save()
 		self.assertEqual(frappe.db.get_value("WA Contact", first["contact"], "consent_status"), "Unknown")
+
+	def test_source_link_cannot_recreate_an_identity_in_minimized_suppression(self):
+		phone_e164 = "+27" + self.phone[1:]
+		frappe.set_user("Administrator")
+		raw(
+			"WA Suppression",
+			company=COMPANY,
+			contact=None,
+			purpose="Marketing",
+			reason="Opt Out",
+			active=1,
+			identity_digest=digest_for_identity(COMPANY, phone_e164),
+			changed_at=frappe.utils.now_datetime(),
+			changed_by="Administrator",
+		)
+		frappe.set_user(self.manager)
+		with self.assertRaises(CommandError):
+			add_source("Lead", self.lead.name, self.phone, "ZA")
+		self.assertFalse(frappe.db.exists("WA Contact", {"company": COMPANY, "phone_e164": phone_e164}))
 
 	def test_concurrent_contact_inserts_leave_one_company_phone_identity(self):
 		site, sites_path = frappe.local.site, frappe.local.sites_path
